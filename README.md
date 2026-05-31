@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Verde CBD — Boutique e-commerce
 
-## Getting Started
+Boutique e-commerce complète pour la vente de produits CBD en France. Construite avec Next.js 16, Supabase, Tailwind CSS et Stripe (optionnel).
 
-First, run the development server:
+## Fonctionnalités
+
+### Storefront
+- Page d'accueil avec hero, catégories et best-sellers
+- Catalogue produits avec filtres par catégorie et recherche
+- Fiches produit détaillées (CBD %, THC %, COA, stock)
+- Panier persistant (localStorage via Zustand)
+- Checkout complet (adresse, livraison, paiement)
+- Vérification d'âge (+18) obligatoire
+
+### Compte client
+- Inscription / Connexion (Supabase Auth)
+- Historique des commandes avec suivi
+- Gestion des adresses de livraison
+- Profil utilisateur
+
+### Administration
+- Dashboard avec statistiques
+- Gestion des commandes (statuts, numéro de suivi)
+- Gestion des produits (CRUD, stock, activation)
+
+### Conformité CBD France
+- Mentions légales, CGV, politique de confidentialité
+- Avertissement THC < 0,3%
+- Certificats d'analyse (COA) par produit
+- TVA 20% calculée automatiquement
+
+### Paiement
+- **Virement bancaire** (recommandé pour CBD)
+- **Carte bancaire** via Stripe (mode test uniquement)
+- ⚠️ Stripe **interdit** le CBD en production — utilisez un processeur compatible (Mollie, PayPlug, AllayPay, etc.)
+
+## Démarrage rapide
+
+### 1. Installation
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+### 2. Configuration Supabase
+
+1. Créez un projet sur [supabase.com](https://supabase.com)
+2. Copiez l'URL et la clé anon dans `.env.local`
+3. Exécutez la migration SQL :
+
+```bash
+# Via le dashboard Supabase > SQL Editor
+# Collez le contenu de supabase/migrations/001_initial_schema.sql
+# Puis supabase/seed.sql pour les produits
+```
+
+4. Créez un admin :
+
+```sql
+UPDATE profiles SET role = 'admin' WHERE email = 'votre@email.com';
+```
+
+### 3. Lancer le dev
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrez [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> **Mode démo** : Sans Supabase configuré, le site fonctionne avec 12 produits statiques en mémoire. Le checkout génère un numéro de commande mais ne persiste pas en base.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Structure du projet
 
-## Learn More
+```
+src/
+├── app/                    # Pages Next.js App Router
+│   ├── boutique/           # Catalogue
+│   ├── produit/[slug]/     # Fiche produit
+│   ├── panier/             # Panier
+│   ├── checkout/           # Commande
+│   ├── compte/             # Espace client
+│   ├── admin/              # Back-office
+│   └── api/                # API routes
+├── components/             # Composants React
+├── lib/                    # Utilitaires, data, Supabase
+├── store/                  # État global (panier)
+└── types/                  # Types TypeScript
+supabase/
+├── migrations/             # Schéma PostgreSQL
+└── seed.sql                # Données initiales
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Livraison
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Mode | Prix | Délai |
+|------|------|-------|
+| Colissimo Standard | 5,90€ | 3-5 jours |
+| Colissimo Express | 9,90€ | 1-2 jours |
+| Point Relais | 3,90€ | 3-5 jours |
+| Gratuite | 0€ | dès 80€ |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Déploiement
 
-## Deploy on Vercel
+```bash
+npm run build
+npm start
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Recommandé : [Vercel](https://vercel.com) avec variables d'environnement Supabase.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Mise en production — Checklist
+
+- [ ] Configurer Supabase (auth, RLS, seed)
+- [ ] Choisir un processeur de paiement compatible CBD
+- [ ] Mettre à jour les mentions légales (SIRET, adresse réels)
+- [ ] Configurer l'envoi d'emails (Resend, SendGrid)
+- [ ] Ajouter Google Analytics / consentement cookies
+- [ ] Tester le parcours complet commande → livraison
+- [ ] Vérifier la conformité ANSM (pas de HHC, THCP, etc.)
+
+## Licence
+
+Projet privé — Verde CBD SAS
