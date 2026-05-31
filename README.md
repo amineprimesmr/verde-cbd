@@ -1,6 +1,12 @@
 # Verde CBD — Boutique e-commerce
 
-Boutique e-commerce complète pour la vente de produits CBD en France. Construite avec Next.js 16, Supabase, Tailwind CSS et Stripe (optionnel).
+Boutique e-commerce complète pour la vente de produits CBD en France.
+
+**Production :** [https://verde-cbd.vercel.app](https://verde-cbd.vercel.app)  
+**GitHub :** [github.com/amineprimesmr/verde-cbd](https://github.com/amineprimesmr/verde-cbd)  
+**Vercel :** [verde-cbd sur Vercel](https://vercel.com/amines-projects-00de692e/verde-cbd)
+
+Construite avec Next.js 16, Supabase (optionnel), Tailwind CSS et Stripe (optionnel).
 
 ## Fonctionnalités
 
