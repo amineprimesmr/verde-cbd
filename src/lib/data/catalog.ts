@@ -58,17 +58,6 @@ const AMNESIA_IMAGES = [
   "/images/Amnesia4.png",
 ];
 
-const OG_KUSH_IMAGES = [
-  "/images/produit.png",
-  "/images/produit copie.png",
-  "/images/produit copie 2.png",
-  "/images/produit copie 3.png",
-];
-
-const PURPLE_HAZE_IMAGES = [
-  "/images/28caf18d-db04-4674-8caf-a3855ac143bd.png",
-];
-
 const HUILE_IMAGES = [
   "/images/huile1.png",
   "/images/huile2.png",
@@ -101,7 +90,7 @@ export const STATIC_PRODUCTS: Product[] = [
     category: "fleurs", price_cents: 990, compare_at_price_cents: null, thc_percent: 0.18, cbd_percent: 15,
     weight_grams: 2, stock: 200, sku: "FLR-OGK-2G",
     image_url: AMNESIA_IMAGES[0],
-    images: [AMNESIA_IMAGES[0], ...OG_KUSH_IMAGES], coa_url: "/coa/og-kush.pdf", is_featured: true, is_active: true, tags: ["greenhouse"], created_at: new Date().toISOString(),
+    images: AMNESIA_IMAGES, coa_url: "/coa/og-kush.pdf", is_featured: true, is_active: true, tags: ["greenhouse"], created_at: new Date().toISOString(),
   },
   {
     id: "3", name: "Purple Haze Outdoor", slug: "purple-haze-outdoor",
@@ -110,7 +99,7 @@ export const STATIC_PRODUCTS: Product[] = [
     category: "fleurs", price_cents: 790, compare_at_price_cents: 990, thc_percent: 0.15, cbd_percent: 12,
     weight_grams: 2, stock: 180, sku: "FLR-PHO-2G",
     image_url: AMNESIA_IMAGES[0],
-    images: [AMNESIA_IMAGES[0], ...PURPLE_HAZE_IMAGES], coa_url: "/coa/purple-haze.pdf", is_featured: false, is_active: true, tags: ["outdoor", "bio"], created_at: new Date().toISOString(),
+    images: AMNESIA_IMAGES, coa_url: "/coa/purple-haze.pdf", is_featured: false, is_active: true, tags: ["outdoor", "bio"], created_at: new Date().toISOString(),
   },
   {
     id: "4", name: "Résine CBD Pollen Premium", slug: "resine-cbd-pollen-premium",

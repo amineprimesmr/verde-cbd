@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   images: {
+    // Vercel Image Optimization renvoie 402 sur ce plan — servir /public directement
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
