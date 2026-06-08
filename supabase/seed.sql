@@ -62,7 +62,7 @@ INSERT INTO products (name, slug, description, short_description, category, pric
   'Hash CBD frozen, méthode charas à basse température. Texture malléable, arômes profonds et effet relaxant marqué. Référence haut de gamme de notre gamme résines.',
   'Frozen hash charas, CBD 28%, texture premium',
   'resines', 2290, 2690, 0.20, 28.00, 1.0, 45, 'RES-FRZ-1G',
-  '/images/resine3.png', '["/images/resine1.png","/images/resine2.png","/images/resine3.png","/images/resine4.png"]',
+  '/images/frozen-hash-charas-1.png', '["/images/frozen-hash-charas-1.png","/images/frozen-hash-charas-2.png","/images/frozen-hash-charas-3.png","/images/frozen-hash-charas-4.png"]',
   '/coa/frozen-hash.pdf', FALSE, ARRAY['hash', 'frozen', 'premium']
 ),
 (

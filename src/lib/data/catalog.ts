@@ -106,6 +106,13 @@ const POLLEN_PREMIUM_IMAGES = [
   "/images/pollen-premium-5.png",
 ];
 
+const FROZEN_HASH_CHARAS_IMAGES = [
+  "/images/frozen-hash-charas-1.png",
+  "/images/frozen-hash-charas-2.png",
+  "/images/frozen-hash-charas-3.png",
+  "/images/frozen-hash-charas-4.png",
+];
+
 const VAPE_IMAGES = [
   "/images/huile1.png",
   "/images/huile2.png",
@@ -274,8 +281,9 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 1,
     stock: 45,
     sku: "RES-FRZ-1G",
-    image_url: RESINE_IMAGES[2],
-    images: RESINE_IMAGES,
+    image_url: FROZEN_HASH_CHARAS_IMAGES[0],
+    images: FROZEN_HASH_CHARAS_IMAGES,
+    detail_images: FROZEN_HASH_CHARAS_IMAGES,
     coa_url: "/coa/frozen-hash.pdf",
     is_featured: false,
     is_active: true,
