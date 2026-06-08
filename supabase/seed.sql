@@ -46,7 +46,7 @@ INSERT INTO products (name, slug, description, short_description, category, pric
   'Résine CBD type pollen, texture souple et aromatique. Extraction à froid pour préserver les terpènes naturels. Concentration élevée pour une expérience optimale.',
   'Pollen premium, texture souple, CBD 25%',
   'resines', 1490, 1790, 0.25, 25.00, 2.0, 80, 'RES-POL-2G',
-  '/images/resine1.png', '["/images/resine1.png","/images/resine2.png","/images/resine3.png","/images/resine4.png"]',
+  '/images/pollen-premium-1.png', '["/images/pollen-premium-1.png","/images/pollen-premium-2.png","/images/pollen-premium-3.png","/images/pollen-premium-4.png","/images/pollen-premium-5.png"]',
   '/coa/pollen.pdf', TRUE, ARRAY['pollen', 'premium']
 ),
 (

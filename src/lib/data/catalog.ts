@@ -91,6 +91,14 @@ const RESINE_IMAGES = [
   "/images/resine4.png",
 ];
 
+const POLLEN_PREMIUM_IMAGES = [
+  "/images/pollen-premium-1.png",
+  "/images/pollen-premium-2.png",
+  "/images/pollen-premium-3.png",
+  "/images/pollen-premium-4.png",
+  "/images/pollen-premium-5.png",
+];
+
 const VAPE_IMAGES = [
   "/images/huile1.png",
   "/images/huile2.png",
@@ -211,8 +219,9 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 2,
     stock: 80,
     sku: "RES-POL-2G",
-    image_url: RESINE_IMAGES[0],
-    images: RESINE_IMAGES,
+    image_url: POLLEN_PREMIUM_IMAGES[0],
+    images: POLLEN_PREMIUM_IMAGES,
+    detail_images: POLLEN_PREMIUM_IMAGES,
     coa_url: "/coa/pollen.pdf",
     is_featured: true,
     is_active: true,

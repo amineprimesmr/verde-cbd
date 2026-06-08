@@ -24,7 +24,7 @@ import type { ProductCategory } from "@/types";
 
 const CATEGORY_IMAGES: Record<ProductCategory, string> = {
   fleurs: "/images/Amnesia1.png",
-  resines: "/images/resine1.png",
+  resines: "/images/pollen-premium-1.png",
   vapes: "/images/huile1.png",
   accessoires: "https://images.unsplash.com/photo-1603906835853-f61e1b4d2f48?w=600&q=80",
 };
