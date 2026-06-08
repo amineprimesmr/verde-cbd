@@ -25,25 +25,24 @@ import type { ProductCategory } from "@/types";
 const CATEGORY_IMAGES: Record<ProductCategory, string> = {
   fleurs: "/images/Amnesia1.png",
   resines: "/images/resine1.png",
-  huiles: "/images/huile1.png",
-  cosmetiques: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&q=80",
-  infusions: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&q=80",
+  vapes: "/images/huile1.png",
+  accessoires: "https://images.unsplash.com/photo-1603906835853-f61e1b4d2f48?w=600&q=80",
 };
 
 const TESTIMONIALS = [
   {
     name: "Sophie M.",
-    text: "Qualité exceptionnelle, livraison rapide. Les fleurs Amnesia Haze sont incroyables, arômes authentiques.",
+    text: "Les pre-rolls en tube sont parfaits — prêts à l'emploi, arômes authentiques et conservation impeccable.",
     rating: 5,
   },
   {
     name: "Thomas L.",
-    text: "Enfin une boutique CBD sérieuse avec des certificats d'analyse. Le service client est au top.",
+    text: "Enfin une boutique CBD sérieuse. La gamme Omega H4CBD est vraiment puissante, service client au top.",
     rating: 5,
   },
   {
     name: "Marie D.",
-    text: "J'utilise l'huile broad spectrum depuis 3 mois. Produit premium, je recommande vivement Verde CBD.",
+    text: "Pod rechargeable + recharges classiques, mon combo quotidien. Qualité premium, je recommande Verde CBD.",
     rating: 5,
   },
 ];
@@ -78,7 +77,7 @@ export function HomeContent({ featuredProducts, categories }: HomeContentProps) 
             { icon: Shield, title: "Certifié & légal", desc: "THC inférieur à 0,3 %, conforme à la réglementation française" },
             { icon: FlaskConical, title: "Analyses laboratoire", desc: "Certificats COA accessibles pour chaque référence" },
             { icon: Truck, title: "Livraison rapide", desc: "Expédition sous 24 h, livraison offerte dès 80 €" },
-            { icon: Leaf, title: "Sélection premium", desc: "Fleurs, huiles et résines triées sur qualité et traçabilité" },
+            { icon: Leaf, title: "Sélection premium", desc: "Pre-rolls, résines et vapes triés sur qualité et traçabilité" },
           ].map(({ icon: Icon, title, desc }) => (
             <StaggerItem key={title}>
               <div className="group h-full rounded-2xl border border-border bg-white p-6 text-center transition-all duration-300 hover:border-primary/20 hover:shadow-lg">
@@ -113,8 +112,8 @@ export function HomeContent({ featuredProducts, categories }: HomeContentProps) 
             </Link>
           </FadeIn>
 
-          <Stagger className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.slice(0, 6).map((cat) => (
+          <Stagger className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {categories.map((cat) => (
               <StaggerItem key={cat.id}>
                 <Link
                   href={`/boutique?category=${cat.id}`}

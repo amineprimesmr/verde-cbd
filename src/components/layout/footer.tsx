@@ -11,8 +11,8 @@ export function Footer() {
           <div className="lg:col-span-4">
             <Logo variant="dark" className="mb-1" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Votre boutique CBD premium en France. Fleurs, résines, huiles et
-              cosmétiques sélectionnés avec soin. THC &lt; 0,3%, certificats
+              Votre boutique CBD premium en France. Pre-rolls, résines, vapes
+              et accessoires sélectionnés avec soin. THC &lt; 0,3%, certificats
               d&apos;analyse disponibles.
             </p>
             <div className="mt-5 flex gap-3">
@@ -42,7 +42,7 @@ export function Footer() {
             <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
               <li>
                 <Link href="/boutique?category=fleurs" className="hover:text-primary">
-                  Fleurs CBD
+                  Pre-rolls CBD
                 </Link>
               </li>
               <li>
@@ -51,13 +51,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/boutique?category=huiles" className="hover:text-primary">
-                  Huiles CBD
+                <Link href="/boutique?category=vapes" className="hover:text-primary">
+                  Vapes &amp; E-liquides
                 </Link>
               </li>
               <li>
-                <Link href="/boutique?category=cosmetiques" className="hover:text-primary">
-                  Cosmétiques
+                <Link href="/boutique?category=accessoires" className="hover:text-primary">
+                  Accessoires
                 </Link>
               </li>
               <li>

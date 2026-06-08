@@ -1,9 +1,14 @@
 import { ShopCatalog } from "@/components/shop/shop-catalog";
-import { getProducts, CATEGORIES } from "@/lib/data/products";
-import type { Product, ProductCategory } from "@/types";
+import { getProducts, CATEGORIES, VAPE_SUBCATEGORIES } from "@/lib/data/products";
+import type { Product, ProductCategory, VapeSubcategory } from "@/types";
 
 interface PageProps {
-  searchParams: Promise<{ category?: string; search?: string; sort?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    subcategory?: string;
+    search?: string;
+    sort?: string;
+  }>;
 }
 
 export const metadata = {
@@ -29,11 +34,12 @@ function sortProducts(products: Product[], sort?: string): Product[] {
 export default async function BoutiquePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const category = params.category as ProductCategory | undefined;
+  const subcategory = params.subcategory as VapeSubcategory | undefined;
   const search = params.search;
   const sort = params.sort;
 
   const products = sortProducts(
-    await getProducts({ category, search }),
+    await getProducts({ category, subcategory, search }),
     sort
   );
 
@@ -41,7 +47,9 @@ export default async function BoutiquePage({ searchParams }: PageProps) {
     <ShopCatalog
       products={products}
       categories={CATEGORIES}
+      vapeSubcategories={VAPE_SUBCATEGORIES}
       activeCategory={category}
+      activeSubcategory={subcategory}
     />
   );
 }

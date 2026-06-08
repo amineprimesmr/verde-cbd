@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     template: "%s | Verde CBD",
   },
   description:
-    "Découvrez notre sélection de fleurs CBD, résines, huiles et cosmétiques. Produits certifiés, THC < 0,3%, analyses laboratoire. Livraison rapide en France.",
-  keywords: ["CBD", "fleurs CBD", "huile CBD", "résine CBD", "chanvre", "France"],
+    "Découvrez notre sélection de pre-rolls CBD, résines, vapes et accessoires. Produits certifiés, THC < 0,3%, analyses laboratoire. Livraison rapide en France.",
+  keywords: ["CBD", "pre-roll CBD", "résine CBD", "vape CBD", "e-liquide CBD", "chanvre", "France"],
 };
 
 export default function RootLayout({

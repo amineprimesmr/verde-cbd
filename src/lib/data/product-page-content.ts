@@ -13,22 +13,28 @@ export function getProductBenefits(category: ProductCategory) {
 
   const byCategory: Partial<Record<ProductCategory, typeof common>> = {
     fleurs: [
-      { emoji: "🌿", label: "Arômes authentiques" },
-      { emoji: "😌", label: "Effet relaxant" },
+      { emoji: "🚬", label: "Prêt à l'emploi" },
+      { emoji: "📦", label: "Conservation en tube" },
       { emoji: "✅", label: "THC < 0,3%" },
       { emoji: "🔬", label: "Analysé en laboratoire" },
-    ],
-    huiles: [
-      { emoji: "💧", label: "Absorption optimale" },
-      { emoji: "😌", label: "Apaise au quotidien" },
-      { emoji: "✅", label: "Full & broad spectrum" },
-      { emoji: "😴", label: "Favorise le sommeil" },
     ],
     resines: [
       { emoji: "✨", label: "Concentration élevée" },
       { emoji: "😌", label: "Relaxation profonde" },
       { emoji: "✅", label: "THC < 0,3%" },
       { emoji: "🔬", label: "COA disponible" },
+    ],
+    vapes: [
+      { emoji: "☁️", label: "Effet rapide" },
+      { emoji: "🔋", label: "Pods rechargeables" },
+      { emoji: "✅", label: "Sans goudron" },
+      { emoji: "🇫🇷", label: "Formules françaises" },
+    ],
+    accessoires: [
+      { emoji: "🔥", label: "Qualité premium" },
+      { emoji: "♻️", label: "Réutilisable" },
+      { emoji: "📦", label: "Format pratique" },
+      { emoji: "✅", label: "Marques reconnues" },
     ],
   };
 
@@ -45,19 +51,19 @@ export const STORY_RINGS = [
 export const TESTIMONIALS = [
   {
     title: "Qualité exceptionnelle",
-    text: "Produit premium, livraison rapide. Les arômes sont authentiques et l'effet relaxant est bien présent sans sensation de grogginess.",
+    text: "Les pre-rolls en tube sont top — prêts à l'emploi, arômes authentiques et conservation parfaite. Livraison rapide.",
     author: "Sophie A.",
     rating: 5,
   },
   {
     title: "Enfin une marque sérieuse",
-    text: "Certificat d'analyse disponible, service client réactif. Je recommande Verde CBD les yeux fermés.",
+    text: "Certificat d'analyse disponible, service client réactif. La gamme Omega H4CBD est vraiment puissante. Je recommande Verde CBD.",
     author: "Thomas L.",
     rating: 5,
   },
   {
     title: "Transformée",
-    text: "J'utilise ce produit depuis 3 mois dans ma routine bien-être. La qualité est constante et le rapport qualité-prix excellent.",
+    text: "Le pod rechargeable + les recharges classiques, c'est mon combo quotidien. Qualité constante et rapport qualité-prix excellent.",
     author: "Marie D.",
     rating: 5,
   },
@@ -91,21 +97,35 @@ export function getProductFaqs(category: ProductCategory) {
     },
   ];
 
-  if (category === "huiles") {
+  if (category === "fleurs") {
     return [
       {
-        q: "Comment utiliser l'huile CBD ?",
-        a: "Placez quelques gouttes sous la langue, laissez agir 60 secondes puis avalez. Commencez par une dose faible et augmentez progressivement.",
+        q: "Comment utiliser les pre-rolls CBD ?",
+        a: "Nos pre-rolls sont déjà roulés et conditionnés en tube hermétique. Sortez la cigarette du tube et consommez directement. Conservez le tube pour les prochaines utilisations.",
       },
       ...base,
     ];
   }
 
-  if (category === "fleurs" || category === "resines") {
+  if (category === "resines") {
     return [
       {
-        q: "Comment consommer les fleurs/résines CBD ?",
-        a: "Nos produits sont destinés à être utilisés comme infusions ou en vaporisation à basse température (≤180°C). Ne pas fumer.",
+        q: "Comment consommer les résines CBD ?",
+        a: "Nos résines sont destinées à être utilisées en infusion (80°C, 10 min) ou en vaporisation à basse température (≤180°C). Ne pas fumer.",
+      },
+      ...base,
+    ];
+  }
+
+  if (category === "vapes") {
+    return [
+      {
+        q: "Quelle différence entre recharges classiques et gamme Omega ?",
+        a: "Les recharges classiques contiennent du CBD full spectrum (500mg) pour un effet relaxant progressif. La gamme Omega est enrichie en H4CBD (800mg) pour un effet plus puissant et rapide, réservée aux utilisateurs expérimentés.",
+      },
+      {
+        q: "Comment utiliser le booster CBD ?",
+        a: "Mélangez le booster à votre e-liquide préféré selon le dosage souhaité. Commencez par quelques gouttes et ajustez progressivement. Agitez bien avant utilisation.",
       },
       ...base,
     ];
@@ -115,37 +135,44 @@ export function getProductFaqs(category: ProductCategory) {
 }
 
 export function getUsageSteps(category: ProductCategory) {
-  if (category === "huiles") {
+  if (category === "fleurs") {
     return [
-      "Agitez le flacon avant utilisation.",
-      "Placez 3 à 5 gouttes sous la langue, 1 à 2 fois par jour.",
-      "Laissez agir 60 secondes avant d'avaler.",
+      "Ouvrez le tube hermétique et sortez le pre-roll.",
+      "Allumez et consommez à votre rythme.",
+      "Refermez le tube pour conserver la fraîcheur des pre-rolls restants.",
     ];
   }
-  if (category === "fleurs" || category === "resines") {
+  if (category === "resines") {
     return [
       "Prélevez la quantité souhaitée avec une balance de précision.",
       "Utilisez en infusion (80°C, 10 min) ou en vaporisation.",
       "Conservez dans un endroit frais, sec et à l'abri de la lumière.",
     ];
   }
-  if (category === "infusions") {
+  if (category === "vapes") {
     return [
-      "Infusez 1 sachet dans 250 ml d'eau à 80°C.",
-      "Laissez reposer 5 à 10 minutes.",
-      "Consommez 1 à 2 tasses par jour, de préférence le soir.",
+      "Insérez la cartouche dans le pod ou remplissez votre clearomiseur.",
+      "Inhalez lentement par bouffées de 3 à 5 secondes.",
+      "Attendez 15 minutes entre les sessions pour évaluer l'effet.",
+    ];
+  }
+  if (category === "accessoires") {
+    return [
+      "Utilisez selon les instructions du produit.",
+      "Nettoyez régulièrement pour une durée de vie optimale.",
+      "Conservez au sec, à l'abri de la chaleur.",
     ];
   }
   return [
-    "Appliquez ou consommez selon les instructions du produit.",
+    "Utilisez selon les instructions du produit.",
     "Respectez la posologie recommandée.",
     "Conservez au sec, à l'abri de la lumière.",
   ];
 }
 
 export function getScientificQuote(category: ProductCategory) {
-  if (category === "huiles") {
-    return "Le cannabidiol (CBD) interagit avec le système endocannabinoid pour favoriser l'équilibre du corps et de l'esprit, sans effet psychoactif.";
+  if (category === "vapes") {
+    return "La vaporisation du CBD offre une biodisponibilité élevée et un effet quasi-immédiat, sans combustion ni goudron, pour une expérience propre et contrôlée.";
   }
   return "Le CBD, extrait du chanvre, est reconnu pour ses propriétés relaxantes et son profil sécuritaire, avec un taux de THC inférieur à 0,3%.";
 }
@@ -191,7 +218,9 @@ export function getAccordionSections(product: Product) {
     {
       id: "composition",
       title: "Composition & concentrations",
-      content: `CBD ${product.cbd_percent}% — THC < ${product.thc_percent}%. ${product.weight_grams ? `Poids net : ${product.weight_grams}g.` : ""} SKU : ${product.sku}. Produit 100% naturel, sans OGM.${product.coa_url ? " Certificat d'analyse (COA) disponible en téléchargement." : ""}`,
+      content: product.cbd_percent > 0
+        ? `CBD ${product.cbd_percent}% — THC < ${product.thc_percent}%. ${product.weight_grams ? `Poids net : ${product.weight_grams}g.` : ""} SKU : ${product.sku}. Produit 100% naturel, sans OGM.${product.coa_url ? " Certificat d'analyse (COA) disponible en téléchargement." : ""}`
+        : `${product.short_description} SKU : ${product.sku}.${product.coa_url ? " Certificat d'analyse (COA) disponible en téléchargement." : ""}`,
     },
     {
       id: "pour-qui",

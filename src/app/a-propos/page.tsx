@@ -23,7 +23,9 @@ export default function AProposPage() {
       <p>
         Tous nos produits respectent la réglementation française : THC total
         inférieur à 0,3%, variétés de chanvre autorisées, traçabilité complète.
-        Nous ne commercialisons aucun cannabinoïde synthétique (HHC, THCP, etc.).
+        Notre gamme Omega propose du H4CBD, un dérivé hydrogéné du CBD à effet
+        plus marqué, dans le strict respect de la législation en vigueur. Nous
+        ne commercialisons aucun cannabinoïde interdit (HHC, THCP, etc.).
       </p>
 
       <h2>Notre équipe</h2>

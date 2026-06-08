@@ -45,7 +45,7 @@ function HeroContent() {
         Des produits CBD premium, français &amp; éco-responsables.
         <span className="hidden sm:inline">
           {" "}
-          Fleurs, huiles et résines sélectionnées avec exigence.
+          Pre-rolls, résines, vapes et accessoires sélectionnés avec exigence.
         </span>
       </motion.p>
 
@@ -80,7 +80,7 @@ export function HeroBanner() {
       <div className="relative w-full lg:hidden">
         <Image
           src="/images/bannermobile.png"
-          alt="Huile CBD premium Verde — Relaxation 20% spectre complet"
+          alt="Pre-rolls et produits CBD premium Verde"
           width={MOBILE_BANNER_WIDTH}
           height={MOBILE_BANNER_HEIGHT}
           priority
@@ -108,7 +108,7 @@ export function HeroBanner() {
         <div className="absolute inset-0">
           <Image
             src="/images/banner.png"
-            alt="Huile CBD premium Verde — flacon ambré sur pierre naturelle"
+            alt="Pre-rolls et produits CBD premium Verde"
             fill
             priority
             unoptimized

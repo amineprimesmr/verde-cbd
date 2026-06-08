@@ -20,7 +20,7 @@ CREATE TABLE products (
   slug TEXT NOT NULL UNIQUE,
   description TEXT NOT NULL DEFAULT '',
   short_description TEXT NOT NULL DEFAULT '',
-  category TEXT NOT NULL CHECK (category IN ('fleurs', 'resines', 'huiles', 'cosmetiques', 'infusions')),
+  category TEXT NOT NULL CHECK (category IN ('fleurs', 'resines', 'vapes', 'accessoires')),
   price_cents INTEGER NOT NULL CHECK (price_cents >= 0),
   compare_at_price_cents INTEGER CHECK (compare_at_price_cents >= 0),
   thc_percent DECIMAL(4,2) NOT NULL DEFAULT 0.3 CHECK (thc_percent <= 0.3),

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ProductCategory } from "@/types";
+import type { ProductCategory, VapeSubcategory } from "@/types";
 
 const SORT_OPTIONS = [
   { value: "", label: "Pertinence" },
@@ -16,12 +16,16 @@ const SORT_OPTIONS = [
 
 interface ShopFilterDrawerProps {
   categories: { id: ProductCategory; name: string }[];
+  vapeSubcategories?: { id: VapeSubcategory; name: string }[];
   activeCategory?: ProductCategory;
+  activeSubcategory?: VapeSubcategory;
 }
 
 export function ShopFilterDrawer({
   categories,
+  vapeSubcategories = [],
   activeCategory,
+  activeSubcategory,
 }: ShopFilterDrawerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,16 +45,28 @@ export function ShopFilterDrawer({
     };
   }, [open]);
 
-  function applyFilters(category?: ProductCategory | null) {
+  function applyFilters(
+    category?: ProductCategory | null,
+    subcategory?: VapeSubcategory | null
+  ) {
     const params = new URLSearchParams();
     const cat = category === null ? undefined : category ?? activeCategory;
+    const sub =
+      subcategory === null
+        ? undefined
+        : subcategory ?? (cat === "vapes" ? activeSubcategory : undefined);
+
     if (cat) params.set("category", cat);
+    if (sub && cat === "vapes") params.set("subcategory", sub);
     if (search.trim()) params.set("search", search.trim());
     if (sort) params.set("sort", sort);
     const qs = params.toString();
     router.push(qs ? `/boutique?${qs}` : "/boutique");
     setOpen(false);
   }
+
+  const showVapeSubcategories =
+    activeCategory === "vapes" && vapeSubcategories.length > 0;
 
   return (
     <>
@@ -115,7 +131,7 @@ export function ShopFilterDrawer({
             <div className="mt-3 space-y-1">
               <button
                 type="button"
-                onClick={() => applyFilters(null)}
+                onClick={() => applyFilters(null, null)}
                 className={cn(
                   "block w-full py-2.5 text-left text-sm",
                   !activeCategory ? "font-bold text-black" : "text-black/65"
@@ -127,7 +143,7 @@ export function ShopFilterDrawer({
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => applyFilters(cat.id)}
+                  onClick={() => applyFilters(cat.id, null)}
                   className={cn(
                     "block w-full py-2.5 text-left text-sm",
                     activeCategory === cat.id
@@ -140,6 +156,41 @@ export function ShopFilterDrawer({
               ))}
             </div>
           </div>
+
+          {showVapeSubcategories && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-black/45">
+                Type de vape
+              </p>
+              <div className="mt-3 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => applyFilters("vapes", null)}
+                  className={cn(
+                    "block w-full py-2.5 text-left text-sm",
+                    !activeSubcategory ? "font-bold text-black" : "text-black/65"
+                  )}
+                >
+                  Toutes les vapes
+                </button>
+                {vapeSubcategories.map((sub) => (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => applyFilters("vapes", sub.id)}
+                    className={cn(
+                      "block w-full py-2.5 pl-3 text-left text-sm",
+                      activeSubcategory === sub.id
+                        ? "font-bold text-black"
+                        : "text-black/65"
+                    )}
+                  >
+                    {sub.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-black/45">
@@ -173,7 +224,10 @@ export function ShopFilterDrawer({
           >
             Appliquer
           </button>
-          {(activeCategory || searchParams.get("search") || searchParams.get("sort")) && (
+          {(activeCategory ||
+            activeSubcategory ||
+            searchParams.get("search") ||
+            searchParams.get("sort")) && (
             <Link
               href="/boutique"
               onClick={() => setOpen(false)}

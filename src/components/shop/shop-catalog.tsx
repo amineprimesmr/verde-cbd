@@ -3,18 +3,22 @@
 import { Suspense } from "react";
 import { ShopProductCard } from "@/components/shop/shop-product-card";
 import { ShopFilterDrawer } from "@/components/shop/shop-filter-drawer";
-import type { Product, ProductCategory } from "@/types";
+import type { Product, ProductCategory, VapeSubcategory } from "@/types";
 
 interface ShopCatalogProps {
   products: Product[];
   categories: { id: ProductCategory; name: string }[];
+  vapeSubcategories?: { id: VapeSubcategory; name: string }[];
   activeCategory?: ProductCategory;
+  activeSubcategory?: VapeSubcategory;
 }
 
 export function ShopCatalog({
   products,
   categories,
+  vapeSubcategories,
   activeCategory,
+  activeSubcategory,
 }: ShopCatalogProps) {
   return (
     <div className="bg-white pb-28">
@@ -38,7 +42,12 @@ export function ShopCatalog({
       )}
 
       <Suspense fallback={null}>
-        <ShopFilterDrawer categories={categories} activeCategory={activeCategory} />
+        <ShopFilterDrawer
+          categories={categories}
+          vapeSubcategories={vapeSubcategories}
+          activeCategory={activeCategory}
+          activeSubcategory={activeSubcategory}
+        />
       </Suspense>
     </div>
   );

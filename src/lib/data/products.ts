@@ -1,5 +1,5 @@
 import { cache } from "react";
-import type { Product, ProductCategory, ShippingRate } from "@/types";
+import type { Product, ProductCategory, ShippingRate, VapeSubcategory } from "@/types";
 import {
   STATIC_PRODUCTS,
   STATIC_SHIPPING_RATES,
@@ -33,6 +33,7 @@ function mapDbProduct(row: Record<string, unknown>): Product {
 
 function filterStaticProducts(options?: {
   category?: ProductCategory;
+  subcategory?: VapeSubcategory;
   featured?: boolean;
   search?: string;
 }): Product[] {
@@ -40,6 +41,9 @@ function filterStaticProducts(options?: {
 
   if (options?.category) {
     products = products.filter((p) => p.category === options.category);
+  }
+  if (options?.subcategory) {
+    products = products.filter((p) => p.tags.includes(options.subcategory!));
   }
   if (options?.featured) {
     products = products.filter((p) => p.is_featured);
@@ -58,6 +62,7 @@ function filterStaticProducts(options?: {
 
 async function fetchProductsFromDb(options?: {
   category?: ProductCategory;
+  subcategory?: VapeSubcategory;
   featured?: boolean;
   search?: string;
 }): Promise<Product[] | null> {
@@ -74,6 +79,9 @@ async function fetchProductsFromDb(options?: {
 
     if (options?.category) {
       query = query.eq("category", options.category);
+    }
+    if (options?.subcategory) {
+      query = query.contains("tags", [options.subcategory]);
     }
     if (options?.featured) {
       query = query.eq("is_featured", true);
@@ -102,6 +110,7 @@ async function fetchProductsFromDb(options?: {
 
 export const getProducts = cache(async (options?: {
   category?: ProductCategory;
+  subcategory?: VapeSubcategory;
   featured?: boolean;
   search?: string;
 }): Promise<Product[]> => {
@@ -177,4 +186,4 @@ export async function getShippingRates(
   return rates.filter((r) => subtotalCents >= r.min_order_cents);
 }
 
-export { CATEGORIES, getBestShippingRate } from "@/lib/data/catalog";
+export { CATEGORIES, VAPE_SUBCATEGORIES, getBestShippingRate } from "@/lib/data/catalog";

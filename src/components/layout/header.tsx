@@ -12,12 +12,13 @@ import { cn } from "@/lib/utils";
 
 const NAV_LEFT = [
   { href: "/boutique", label: "Boutique" },
-  { href: "/boutique?category=fleurs", label: "Fleurs" },
+  { href: "/boutique?category=fleurs", label: "Pre-rolls" },
   { href: "/boutique?category=resines", label: "Résines" },
 ];
 
 const NAV_RIGHT = [
-  { href: "/boutique?category=huiles", label: "Huiles" },
+  { href: "/boutique?category=vapes", label: "Vapes" },
+  { href: "/boutique?category=accessoires", label: "Accessoires" },
   { href: "/a-propos", label: "À propos" },
 ];
 
