@@ -113,6 +113,13 @@ const FROZEN_HASH_CHARAS_IMAGES = [
   "/images/frozen-hash-charas-4.png",
 ];
 
+const HASH_DRY_SIFT_IMAGES = [
+  "/images/hash-dry-sift-1.png",
+  "/images/hash-dry-sift-2.png",
+  "/images/hash-dry-sift-3.png",
+  "/images/hash-dry-sift-4.png",
+];
+
 const VAPE_IMAGES = [
   "/images/huile1.png",
   "/images/huile2.png",
@@ -258,8 +265,9 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 1,
     stock: 60,
     sku: "RES-DSF-1G",
-    image_url: RESINE_IMAGES[1],
-    images: RESINE_IMAGES,
+    image_url: HASH_DRY_SIFT_IMAGES[0],
+    images: HASH_DRY_SIFT_IMAGES,
+    detail_images: HASH_DRY_SIFT_IMAGES,
     coa_url: "/coa/dry-sift.pdf",
     is_featured: false,
     is_active: true,

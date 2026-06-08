@@ -54,7 +54,7 @@ INSERT INTO products (name, slug, description, short_description, category, pric
   'Hash CBD obtenu par tamisage à sec (dry sift). Concentration en cannabinoïdes optimale, saveurs intenses et authentiques. 100% naturel, sans solvant.',
   'Hash dry sift artisanal, CBD 30%',
   'resines', 1890, NULL, 0.22, 30.00, 1.0, 60, 'RES-DSF-1G',
-  '/images/resine2.png', '["/images/resine1.png","/images/resine2.png","/images/resine3.png","/images/resine4.png"]',
+  '/images/hash-dry-sift-1.png', '["/images/hash-dry-sift-1.png","/images/hash-dry-sift-2.png","/images/hash-dry-sift-3.png","/images/hash-dry-sift-4.png"]',
   '/coa/dry-sift.pdf', FALSE, ARRAY['hash', 'dry-sift']
 ),
 (
