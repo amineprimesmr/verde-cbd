@@ -91,6 +91,13 @@ const AMNESIA_HAZE_IMAGES = [
   "/images/pre-roll-amnesia-4.png",
 ];
 
+const MANGO_KUSH_IMAGES = [
+  "/images/pre-roll-mango-kush-1.png",
+  "/images/pre-roll-mango-kush-2.png",
+  "/images/pre-roll-mango-kush-3.png",
+  "/images/pre-roll-mango-kush-4.png",
+];
+
 const RESINE_IMAGES = [
   "/images/resine1.png",
   "/images/resine2.png",
@@ -193,8 +200,9 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 1.5,
     stock: 130,
     sku: "PRR-MGK-T3",
-    image_url: PREROLL_IMAGES[2],
-    images: PREROLL_IMAGES,
+    image_url: MANGO_KUSH_IMAGES[0],
+    images: MANGO_KUSH_IMAGES,
+    detail_images: MANGO_KUSH_IMAGES,
     coa_url: "/coa/mango-kush.pdf",
     is_featured: false,
     is_active: true,

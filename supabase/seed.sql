@@ -29,7 +29,7 @@ INSERT INTO products (name, slug, description, short_description, category, pric
   'Pre-rolls Mango Kush aux arômes fruités tropicaux. 3 cigarettes roulées à la main, conditionnées en tube étanche pour préserver fraîcheur et terpènes.',
   'Tube x3 pre-rolls, Mango Kush, arômes fruités, CBD 14%',
   'fleurs', 1190, 1390, 0.15, 14.00, 1.5, 130, 'PRR-MGK-T3',
-  '/images/Amnesia3.png', '["/images/Amnesia1.png","/images/Amnesia2.png","/images/Amnesia3.png","/images/Amnesia4.png"]',
+  '/images/pre-roll-mango-kush-1.png', '["/images/pre-roll-mango-kush-1.png","/images/pre-roll-mango-kush-2.png","/images/pre-roll-mango-kush-3.png","/images/pre-roll-mango-kush-4.png"]',
   '/coa/mango-kush.pdf', FALSE, ARRAY['pre-roll', 'tube', 'fruité']
 ),
 (
