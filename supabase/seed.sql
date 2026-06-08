@@ -13,7 +13,7 @@ INSERT INTO products (name, slug, description, short_description, category, pric
   'Cigarette pré-roulée Amnesia Haze, fleur indoor premium. 3 pre-rolls calibrés à 0,5g chacun, déjà roulés et conservés dans un tube hermétique aluminium. Profil citronné et épicé, effet relaxant. THC < 0,3%.',
   'Tube x3 pre-rolls, Amnesia Haze indoor, CBD 18%',
   'fleurs', 1490, 1790, 0.20, 18.00, 1.5, 120, 'PRR-AHI-T3',
-  '/images/Amnesia1.png', '["/images/Amnesia1.png","/images/Amnesia2.png","/images/Amnesia3.png","/images/Amnesia4.png"]',
+  '/images/pre-roll-amnesia-1.png', '["/images/pre-roll-amnesia-1.png","/images/pre-roll-amnesia-2.png","/images/pre-roll-amnesia-3.png","/images/pre-roll-amnesia-4.png"]',
   '/coa/amnesia-haze.pdf', TRUE, ARRAY['pre-roll', 'tube', 'indoor']
 ),
 (

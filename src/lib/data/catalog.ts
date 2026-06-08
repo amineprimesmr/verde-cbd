@@ -84,6 +84,13 @@ const PREROLL_IMAGES = [
   "/images/Amnesia4.png",
 ];
 
+const AMNESIA_HAZE_IMAGES = [
+  "/images/pre-roll-amnesia-1.png",
+  "/images/pre-roll-amnesia-2.png",
+  "/images/pre-roll-amnesia-3.png",
+  "/images/pre-roll-amnesia-4.png",
+];
+
 const RESINE_IMAGES = [
   "/images/resine1.png",
   "/images/resine2.png",
@@ -125,8 +132,9 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 1.5,
     stock: 120,
     sku: "PRR-AHI-T3",
-    image_url: PREROLL_IMAGES[0],
-    images: PREROLL_IMAGES,
+    image_url: AMNESIA_HAZE_IMAGES[0],
+    images: AMNESIA_HAZE_IMAGES,
+    detail_images: AMNESIA_HAZE_IMAGES,
     coa_url: "/coa/amnesia-haze.pdf",
     is_featured: true,
     is_active: true,
