@@ -7,7 +7,6 @@ import { ProductGallery } from "@/components/shop/product/product-gallery";
 import { ProductAccordion } from "@/components/shop/product/product-accordion";
 import {
   ProductPackSelector,
-  PurchaseModeSelector,
   type PackOption,
 } from "@/components/shop/product/product-pack-selector";
 import {
@@ -51,7 +50,6 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
   );
 
   const [selectedPack, setSelectedPack] = useState<PackOption>(packs[0]);
-  const [purchaseMode, setPurchaseMode] = useState<"once" | "subscribe">("once");
 
   const images = useMemo(() => {
     const base = product.images.length > 0 ? product.images : [product.image_url];
@@ -73,11 +71,7 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
   const usageSteps = getUsageSteps(product.category);
   const quote = getScientificQuote(product.category);
 
-  const displayPrice =
-    purchaseMode === "subscribe"
-      ? Math.round(selectedPack.priceCents * 0.85)
-      : selectedPack.priceCents;
-
+  const displayPrice = selectedPack.priceCents;
   const displayCompare = selectedPack.compareCents;
 
   function handleAddToCart() {
@@ -129,14 +123,6 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
             packs={packs}
             selectedId={selectedPack.id}
             onSelect={setSelectedPack}
-          />
-
-          <PurchaseModeSelector
-            mode={purchaseMode}
-            onModeChange={setPurchaseMode}
-            unitPriceCents={selectedPack.priceCents}
-            compareCents={product.compare_at_price_cents}
-            subscribePriceCents={Math.round(selectedPack.priceCents * 0.85)}
           />
 
           <ProductStickyCart
