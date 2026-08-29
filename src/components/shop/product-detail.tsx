@@ -10,11 +10,6 @@ import {
   type PackOption,
 } from "@/components/shop/product/product-pack-selector";
 import {
-  ProductRatingHeader,
-  ProductReviewsCarousel,
-  ProductReviewsBreakdown,
-} from "@/components/shop/product/product-reviews";
-import {
   ProductStickyCart,
   ProductGuaranteeBanner,
   ProductBenefitsGrid,
@@ -104,8 +99,6 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
         </div>
 
         <div className="lg:py-4">
-          <ProductRatingHeader />
-
           <div className="px-4 pt-3 pb-4">
             <h1 className="text-2xl font-bold leading-tight text-black sm:text-3xl">
               {product.name}
@@ -147,8 +140,6 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
         Études cliniques sur le cannabidiol (CBD) — PubMed, 2024
       </div>
 
-      <ProductReviewsCarousel />
-
       <ProductAccordion items={brutalistItems} variant="brutalist" />
 
       <ProductUsageSection steps={usageSteps} />
@@ -166,8 +157,6 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
           className="mt-4"
         />
       </section>
-
-      <ProductReviewsBreakdown />
 
       {relatedProducts.length > 0 && (
         <section className="border-t border-[#eee] bg-[#fafafa] px-4 py-12">

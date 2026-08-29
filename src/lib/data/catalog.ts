@@ -134,6 +134,20 @@ const VAPE_IMAGES = [
   "/images/huile4.png",
 ];
 
+const OG_KUSH_IMAGES = ["/images/og-kush-tube.png"];
+const PACK_4_IMAGES = ["/images/pack-4-pre-rolls.png"];
+const SKUFF_IMAGES = ["/images/skuff-cbd.png"];
+const POD_VERDE_IMAGES = ["/images/pod-verde-rechargeable.png"];
+const RECHARGE_MENTHE_IMAGES = ["/images/recharge-menthe.png"];
+const RECHARGE_MANGUE_IMAGES = ["/images/recharge-mangue.png"];
+const RECHARGE_OMEGA_IMAGES = ["/images/recharge-omega.png"];
+const ELIQUIDE_CLASSIC_IMAGES = ["/images/eliquide-classic.png"];
+const ELIQUIDE_RELAX_IMAGES = ["/images/eliquide-relax.png"];
+const BOOSTER_IMAGES = ["/images/booster-cbd.png"];
+const BRIQUET_IMAGES = ["/images/briquet-clipper.png"];
+const OCB_IMAGES = ["/images/feuilles-ocb.png"];
+const GRINDER_IMAGES = ["/images/grinder-aluminium.png"];
+
 const now = new Date().toISOString();
 
 export const STATIC_PRODUCTS: Product[] = [
@@ -177,8 +191,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 1.5,
     stock: 150,
     sku: "PRR-OGK-T3",
-    image_url: PREROLL_IMAGES[1],
-    images: PREROLL_IMAGES,
+    image_url: OG_KUSH_IMAGES[0],
+    images: OG_KUSH_IMAGES,
     coa_url: "/coa/og-kush.pdf",
     is_featured: false,
     is_active: true,
@@ -224,8 +238,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 2,
     stock: 60,
     sku: "PKT-PRR-4",
-    image_url: PREROLL_IMAGES[3],
-    images: PREROLL_IMAGES,
+    image_url: PACK_4_IMAGES[0],
+    images: PACK_4_IMAGES,
     coa_url: "/coa/pack-pre-rolls.pdf",
     is_featured: true,
     is_active: true,
@@ -321,8 +335,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: 2,
     stock: 100,
     sku: "RES-SKF-2G",
-    image_url: RESINE_IMAGES[3],
-    images: RESINE_IMAGES,
+    image_url: SKUFF_IMAGES[0],
+    images: SKUFF_IMAGES,
     coa_url: "/coa/skuff.pdf",
     is_featured: false,
     is_active: true,
@@ -346,8 +360,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 90,
     sku: "VAP-POD-01",
-    image_url: VAPE_IMAGES[0],
-    images: VAPE_IMAGES,
+    image_url: POD_VERDE_IMAGES[0],
+    images: POD_VERDE_IMAGES,
     coa_url: null,
     is_featured: true,
     is_active: true,
@@ -369,8 +383,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 150,
     sku: "VAP-RCG-MEN",
-    image_url: VAPE_IMAGES[1],
-    images: VAPE_IMAGES,
+    image_url: RECHARGE_MENTHE_IMAGES[0],
+    images: RECHARGE_MENTHE_IMAGES,
     coa_url: "/coa/recharge-menthe.pdf",
     is_featured: false,
     is_active: true,
@@ -392,8 +406,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 140,
     sku: "VAP-RCG-MAN",
-    image_url: VAPE_IMAGES[2],
-    images: VAPE_IMAGES,
+    image_url: RECHARGE_MANGUE_IMAGES[0],
+    images: RECHARGE_MANGUE_IMAGES,
     coa_url: "/coa/recharge-mangue.pdf",
     is_featured: false,
     is_active: true,
@@ -415,8 +429,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 70,
     sku: "VAP-RCG-OMG",
-    image_url: VAPE_IMAGES[3],
-    images: VAPE_IMAGES,
+    image_url: RECHARGE_OMEGA_IMAGES[0],
+    images: RECHARGE_OMEGA_IMAGES,
     coa_url: "/coa/recharge-omega.pdf",
     is_featured: true,
     is_active: true,
@@ -440,8 +454,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 120,
     sku: "ELQ-CL3-10ML",
-    image_url: VAPE_IMAGES[0],
-    images: VAPE_IMAGES,
+    image_url: ELIQUIDE_CLASSIC_IMAGES[0],
+    images: ELIQUIDE_CLASSIC_IMAGES,
     coa_url: "/coa/eliquide-300.pdf",
     is_featured: false,
     is_active: true,
@@ -463,8 +477,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 85,
     sku: "ELQ-RL6-10ML",
-    image_url: VAPE_IMAGES[1],
-    images: VAPE_IMAGES,
+    image_url: ELIQUIDE_RELAX_IMAGES[0],
+    images: ELIQUIDE_RELAX_IMAGES,
     coa_url: "/coa/eliquide-600.pdf",
     is_featured: true,
     is_active: true,
@@ -486,8 +500,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 95,
     sku: "BST-CBD-10ML",
-    image_url: VAPE_IMAGES[2],
-    images: VAPE_IMAGES,
+    image_url: BOOSTER_IMAGES[0],
+    images: BOOSTER_IMAGES,
     coa_url: "/coa/booster-1000.pdf",
     is_featured: false,
     is_active: true,
@@ -511,8 +525,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 200,
     sku: "ACC-BRI-01",
-    image_url: "https://images.unsplash.com/photo-1603906835853-f61e1b4d2f48?w=800&q=80",
-    images: [],
+    image_url: BRIQUET_IMAGES[0],
+    images: BRIQUET_IMAGES,
     coa_url: null,
     is_featured: false,
     is_active: true,
@@ -534,8 +548,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 300,
     sku: "ACC-OCB-50",
-    image_url: "https://images.unsplash.com/photo-1603906835853-f61e1b4d2f48?w=800&q=80",
-    images: [],
+    image_url: OCB_IMAGES[0],
+    images: OCB_IMAGES,
     coa_url: null,
     is_featured: false,
     is_active: true,
@@ -557,8 +571,8 @@ export const STATIC_PRODUCTS: Product[] = [
     weight_grams: null,
     stock: 110,
     sku: "ACC-GRD-50",
-    image_url: "https://images.unsplash.com/photo-1603906835853-f61e1b4d2f48?w=800&q=80",
-    images: [],
+    image_url: GRINDER_IMAGES[0],
+    images: GRINDER_IMAGES,
     coa_url: null,
     is_featured: false,
     is_active: true,

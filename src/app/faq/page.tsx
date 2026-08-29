@@ -19,7 +19,7 @@ export default function FAQPage() {
     },
     {
       q: "Quels modes de paiement acceptez-vous ?",
-      a: "Nous acceptons le virement bancaire et la carte bancaire. Note : en production, un processeur de paiement compatible CBD est requis (Stripe n'accepte pas le CBD).",
+      a: "Nous acceptons le virement bancaire et la carte bancaire via notre partenaire de paiement sécurisé Mollie.",
     },
     {
       q: "Puis-je retourner un produit ?",

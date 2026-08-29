@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe";
+import { getMollie } from "@/lib/mollie";
 import { generateOrderNumber } from "@/lib/utils";
 import { calculateOrderTotal } from "@/lib/data/catalog";
+import { sendOrderConfirmationEmail } from "@/lib/emails";
 
 interface CheckoutItem {
   product_id: string;
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       status: "pending" as const,
       payment_method,
       payment_status: "pending" as const,
-      stripe_payment_intent_id: null,
+      mollie_payment_id: null,
       subtotal_cents: totals.subtotal,
       shipping_cents: totals.shipping,
       tax_cents: totals.tax,
@@ -171,38 +172,39 @@ export async function POST(request: Request) {
     }
 
     if (payment_method === "card") {
-      const stripe = getStripe();
-      if (stripe) {
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ["card"],
-          line_items: items.map((item) => ({
-            price_data: {
-              currency: "eur",
-              product_data: { name: item.product_name },
-              unit_amount: item.unit_price_cents,
-            },
-            quantity: item.quantity,
-          })),
-          mode: "payment",
-          success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/commande/${orderNumber}?success=true`,
-          cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout?cancelled=true`,
-          customer_email: email,
+      const mollie = getMollie();
+      if (mollie) {
+        const payment = await mollie.payments.create({
+          amount: {
+            currency: "EUR",
+            value: (totals.total / 100).toFixed(2),
+          },
+          description: `Commande ${orderNumber} — Verde CBD`,
+          redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/commande/${orderNumber}?success=true`,
+          webhookUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/mollie`,
           metadata: { order_number: orderNumber, order_id: orderId ?? "" },
         });
 
         if (orderId && supabaseUrl) {
           await supabase
             .from("orders")
-            .update({ stripe_payment_intent_id: session.id })
+            .update({ mollie_payment_id: payment.id })
             .eq("id", orderId);
         }
 
         return NextResponse.json({
           order_number: orderNumber,
-          payment_url: session.url,
+          payment_url: payment.getCheckoutUrl(),
         });
       }
     }
+
+    await sendOrderConfirmationEmail({
+      to: email,
+      orderNumber,
+      items,
+      totalCents: totals.total,
+    });
 
     return NextResponse.json({
       order_number: orderNumber,

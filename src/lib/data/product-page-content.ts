@@ -1,8 +1,5 @@
 import type { Product, ProductCategory } from "@/types";
 
-export const PRODUCT_REVIEW_COUNT = 2480;
-export const PRODUCT_RATING = 4.8;
-
 export function getProductBenefits(category: ProductCategory) {
   const common = [
     { emoji: "🧘", label: "Relaxation naturelle" },
@@ -42,40 +39,10 @@ export function getProductBenefits(category: ProductCategory) {
 }
 
 export const STORY_RINGS = [
-  { id: "reviews", label: "Avis clients", image: "reviews" },
   { id: "composition", label: "Composition", image: "composition" },
   { id: "usage", label: "Utilisation", image: "usage" },
   { id: "faq", label: "Questions fréquentes", image: "faq" },
 ] as const;
-
-export const TESTIMONIALS = [
-  {
-    title: "Qualité exceptionnelle",
-    text: "Les pre-rolls en tube sont top — prêts à l'emploi, arômes authentiques et conservation parfaite. Livraison rapide.",
-    author: "Sophie A.",
-    rating: 5,
-  },
-  {
-    title: "Enfin une marque sérieuse",
-    text: "Certificat d'analyse disponible, service client réactif. La gamme Omega H4CBD est vraiment puissante. Je recommande Verde CBD.",
-    author: "Thomas L.",
-    rating: 5,
-  },
-  {
-    title: "Transformée",
-    text: "Le pod rechargeable + les recharges classiques, c'est mon combo quotidien. Qualité constante et rapport qualité-prix excellent.",
-    author: "Marie D.",
-    rating: 5,
-  },
-];
-
-export const RATING_BREAKDOWN = [
-  { stars: 5, count: 1860 },
-  { stars: 4, count: 420 },
-  { stars: 3, count: 120 },
-  { stars: 2, count: 50 },
-  { stars: 1, count: 30 },
-];
 
 export function getProductFaqs(category: ProductCategory) {
   const base = [

@@ -20,7 +20,7 @@ const TRUST_ITEMS = [
   {
     icon: CreditCard,
     title: "Paiement sécurisé",
-    desc: "Stripe — CB, Apple Pay, Google Pay",
+    desc: "Mollie — CB, Bancontact, virement",
   },
 ] as const;
 

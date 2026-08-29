@@ -66,7 +66,7 @@ type OrderRow = {
   status: string;
   payment_method: string;
   payment_status: string;
-  stripe_payment_intent_id: string | null;
+  mollie_payment_id: string | null;
   subtotal_cents: number;
   shipping_cents: number;
   tax_cents: number;
@@ -119,6 +119,12 @@ type ShippingRateRow = {
   created_at: string;
 };
 
+type NewsletterSubscriberRow = {
+  id: string;
+  email: string;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -160,6 +166,14 @@ export interface Database {
         Row: ShippingRateRow;
         Insert: Omit<ShippingRateRow, "id" | "created_at"> & { id?: string };
         Update: Partial<ShippingRateRow>;
+        Relationships: [];
+      };
+      newsletter_subscribers: {
+        Row: NewsletterSubscriberRow;
+        Insert: Omit<NewsletterSubscriberRow, "id" | "created_at"> & {
+          id?: string;
+        };
+        Update: Partial<NewsletterSubscriberRow>;
         Relationships: [];
       };
     };

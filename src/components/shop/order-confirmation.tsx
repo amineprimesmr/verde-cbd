@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle, CreditCard, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BANK_DETAILS } from "@/lib/stripe";
+import { BANK_DETAILS } from "@/lib/mollie";
 import { loadDevOrder } from "@/lib/dev-checkout";
 import { formatPrice, formatDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS } from "@/types";

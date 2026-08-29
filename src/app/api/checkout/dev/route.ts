@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       status: "processing" as const,
       payment_method: "card" as const,
       payment_status: "paid" as const,
-      stripe_payment_intent_id: `dev_sim_${orderNumber}`,
+      mollie_payment_id: `dev_sim_${orderNumber}`,
       subtotal_cents: totals.subtotal,
       shipping_cents: totals.shipping,
       tax_cents: totals.tax,

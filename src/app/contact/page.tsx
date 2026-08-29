@@ -7,10 +7,39 @@ import { Label } from "@/components/ui/label";
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSent(true);
+    setError(null);
+    setLoading(true);
+
+    const form = new FormData(e.currentTarget);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.get("name"),
+          email: form.get("email"),
+          subject: form.get("subject"),
+          message: form.get("message"),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Une erreur est survenue");
+      }
+
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -31,21 +60,24 @@ export default function ContactPage() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
             <Label htmlFor="name">Nom</Label>
-            <Input id="name" required className="mt-1" />
+            <Input id="name" name="name" required className="mt-1" />
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required className="mt-1" />
+            <Input id="email" name="email" type="email" required className="mt-1" />
           </div>
           <div>
             <Label htmlFor="subject">Sujet</Label>
-            <Input id="subject" required className="mt-1" />
+            <Input id="subject" name="subject" required className="mt-1" />
           </div>
           <div>
             <Label htmlFor="message">Message</Label>
-            <Textarea id="message" rows={5} required className="mt-1" />
+            <Textarea id="message" name="message" rows={5} required className="mt-1" />
           </div>
-          <Button type="submit" className="w-full">Envoyer</Button>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Envoi..." : "Envoyer"}
+          </Button>
         </form>
       )}
 

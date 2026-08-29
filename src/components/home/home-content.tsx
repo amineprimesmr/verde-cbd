@@ -8,8 +8,6 @@ import {
   Shield,
   Truck,
   FlaskConical,
-  Star,
-  Quote,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,26 +24,8 @@ const CATEGORY_IMAGES: Record<ProductCategory, string> = {
   fleurs: "/images/pre-roll-amnesia-1.png",
   resines: "/images/pollen-premium-1.png",
   vapes: "/images/huile1.png",
-  accessoires: "https://images.unsplash.com/photo-1603906835853-f61e1b4d2f48?w=600&q=80",
+  accessoires: "/images/grinder-aluminium.png",
 };
-
-const TESTIMONIALS = [
-  {
-    name: "Sophie M.",
-    text: "Les pre-rolls en tube sont parfaits — prêts à l'emploi, arômes authentiques et conservation impeccable.",
-    rating: 5,
-  },
-  {
-    name: "Thomas L.",
-    text: "Enfin une boutique CBD sérieuse. La gamme Omega H4CBD est vraiment puissante, service client au top.",
-    rating: 5,
-  },
-  {
-    name: "Marie D.",
-    text: "Pod rechargeable + recharges classiques, mon combo quotidien. Qualité premium, je recommande Verde CBD.",
-    rating: 5,
-  },
-];
 
 interface HomeContentProps {
   featuredProducts: Product[];
@@ -171,38 +151,6 @@ export function HomeContent({ featuredProducts, categories }: HomeContentProps) 
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="bg-cream section-padding">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <FadeIn className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-              Avis clients
-            </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-foreground">
-              Ils nous font confiance
-            </h2>
-          </FadeIn>
-
-          <Stagger className="mt-10 grid gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map(({ name, text, rating }) => (
-              <StaggerItem key={name}>
-                <div className="relative h-full rounded-2xl border border-border bg-white p-6">
-                  <Quote className="absolute right-4 top-4 h-8 w-8 text-accent-soft" />
-                  <div className="flex gap-0.5">
-                    {[...Array(rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                    &ldquo;{text}&rdquo;
-                  </p>
-                  <p className="mt-4 text-sm font-semibold text-foreground">{name}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </Stagger>
-        </div>
-      </section>
     </>
   );
 }

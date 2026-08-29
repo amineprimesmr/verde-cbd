@@ -99,7 +99,7 @@ export default async function AdminDashboard() {
             {orders?.map((order) => (
               <tr key={order.id} className="border-b border-stone-100">
                 <td className="px-4 py-3">
-                  <Link href={`/admin/commandes/${order.id}`} className="text-emerald-700 hover:underline">
+                  <Link href="/admin/commandes" className="text-emerald-700 hover:underline">
                     {order.order_number}
                   </Link>
                 </td>

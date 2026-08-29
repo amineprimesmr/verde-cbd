@@ -85,7 +85,7 @@ export function DevCheckoutPanel({
             Mode dev
           </p>
           <p className="mt-1 text-xs leading-relaxed text-amber-800">
-            Simule un paiement CB réussi sans Stripe — commande marquée payée,
+            Simule un paiement CB réussi sans Mollie — commande marquée payée,
             flux complet jusqu&apos;à la confirmation.
           </p>
         </div>

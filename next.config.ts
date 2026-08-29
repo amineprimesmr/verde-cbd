@@ -7,16 +7,6 @@ const nextConfig: NextConfig = {
   images: {
     // Vercel Image Optimization renvoie 402 sur ce plan — servir /public directement
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-      },
-    ],
   },
 };
 
