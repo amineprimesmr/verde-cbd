@@ -15,9 +15,7 @@ export async function POST(request: Request) {
       const supabase = await createClient();
       const { error } = await supabase
         .from("newsletter_subscribers")
-        .insert({ email })
-        .select()
-        .single();
+        .insert({ email });
 
       if (error && error.code !== "23505") {
         console.error("Newsletter insert error:", error);
@@ -26,6 +24,8 @@ export async function POST(request: Request) {
           { status: 500 }
         );
       }
+    } else {
+      return NextResponse.json({ error: "L'inscription est momentanément indisponible." }, { status: 503 });
     }
 
     await sendNewsletterWelcomeEmail(email);

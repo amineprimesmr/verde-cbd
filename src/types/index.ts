@@ -9,7 +9,8 @@ export type VapeSubcategory =
   | "recharge-classique"
   | "recharge-omega"
   | "e-liquide"
-  | "booster";
+  | "booster"
+  | "puff";
 
 export type OrderStatus =
   | "pending"
@@ -146,7 +147,7 @@ export interface ShippingRate {
 }
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  fleurs: "Pre-rolls CBD",
+  fleurs: "Fleurs & Pre-rolls",
   resines: "Résines",
   vapes: "Vapes & E-liquides",
   accessoires: "Accessoires",
@@ -158,6 +159,7 @@ export const VAPE_SUBCATEGORY_LABELS: Record<VapeSubcategory, string> = {
   "recharge-omega": "Gamme Omega H4CBD",
   "e-liquide": "E-liquides CBD",
   booster: "Boosters CBD",
+  puff: "Puffs jetables",
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {

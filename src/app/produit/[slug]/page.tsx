@@ -26,6 +26,10 @@ export default async function ProductPage({ params }: PageProps) {
   const relatedProducts = allProducts
     .filter((p) => p.id !== product.id)
     .slice(0, 4);
+  const family = product.slug.replace(/-\d+g$/, "");
+  const variants = product.tags.includes("fleur")
+    ? allProducts.filter((p) => p.slug.replace(/-\d+g$/, "") === family).sort((a, b) => (a.weight_grams ?? 0) - (b.weight_grams ?? 0))
+    : [];
 
-  return <ProductDetail product={product} relatedProducts={relatedProducts} />;
+  return <ProductDetail key={product.id} product={product} relatedProducts={relatedProducts} variants={variants} />;
 }

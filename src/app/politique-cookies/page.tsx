@@ -6,7 +6,7 @@ export default function CookiesPage() {
   return (
     <LegalLayout title="Politique de cookies">
       <p>
-        Le site Verde CBD utilise des cookies pour assurer son bon fonctionnement
+        Le site CBD utilise des cookies pour assurer son bon fonctionnement
         et améliorer votre expérience.
       </p>
 

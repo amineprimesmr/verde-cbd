@@ -15,6 +15,9 @@ export default function AdminProduitsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -74,8 +77,15 @@ export default function AdminProduitsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
+    setError(null);
+    if (!Number.isFinite(form.price_cents) || form.price_cents <= 0 || !Number.isInteger(form.stock) || form.stock < 0) {
+      setError("Indiquez un prix positif et un stock entier supérieur ou égal à zéro.");
+      return;
+    }
+    setSaving(true);
     const supabase = createClient();
-    await supabase.from("products").insert({
+    const values = {
       name: form.name,
       slug: form.slug,
       description: form.description || form.short_description,
@@ -92,16 +102,23 @@ export default function AdminProduitsPage() {
       coa_url: null,
       is_active: true,
       is_featured: false,
-      images: [],
+      images: form.image_url ? [form.image_url] : [],
       tags: [],
-    });
+    };
+    const result = editingId
+      ? await supabase.from("products").update({ name: values.name, description: values.description, short_description: values.short_description, category: values.category, price_cents: values.price_cents, stock: values.stock, cbd_percent: values.cbd_percent, image_url: values.image_url, images: values.images }).eq("id", editingId)
+      : await supabase.from("products").insert(values);
+    setSaving(false);
+    if (result.error) { setError("Enregistrement impossible. Vérifiez le SKU et le nom du produit."); return; }
     setShowForm(false);
+    setEditingId(null);
     loadProducts();
   }
 
   async function toggleActive(id: string, isActive: boolean) {
     const supabase = createClient();
-    await supabase.from("products").update({ is_active: !isActive }).eq("id", id);
+    const { error } = await supabase.from("products").update({ is_active: !isActive }).eq("id", id);
+    if (error) { setError("La disponibilité n'a pas pu être modifiée."); return; }
     loadProducts();
   }
 
@@ -110,6 +127,7 @@ export default function AdminProduitsPage() {
       <div className="flex justify-center py-16">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
       </div>
+
     );
   }
 
@@ -120,7 +138,7 @@ export default function AdminProduitsPage() {
       </Link>
       <div className="mt-4 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-stone-900">Gestion des produits</h1>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={() => { setEditingId(null); setForm({ name: "", slug: "", description: "", short_description: "", category: "fleurs", price_cents: 0, cbd_percent: 0, thc_percent: 0, stock: 0, sku: "", image_url: "" }); setShowForm(!showForm); }}>
           {showForm ? "Annuler" : "Ajouter un produit"}
         </Button>
       </div>
@@ -164,10 +182,12 @@ export default function AdminProduitsPage() {
             <Input className="mt-1" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
           </div>
           <div className="sm:col-span-2">
-            <Button type="submit">Créer le produit</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Enregistrement…" : editingId ? "Enregistrer les modifications" : "Créer le produit"}</Button>
           </div>
         </form>
       )}
+
+      {error && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">{error}</p>}
 
       <div className="mt-8 overflow-hidden rounded-xl border border-stone-200 bg-white">
         <table className="w-full text-sm">
@@ -183,7 +203,7 @@ export default function AdminProduitsPage() {
           <tbody>
             {products.map((p) => (
               <tr key={p.id} className="border-b border-stone-100">
-                <td className="px-4 py-3 font-medium">{p.name}</td>
+                <td className="px-4 py-3 font-medium">{p.name}<button type="button" className="ml-3 text-xs text-emerald-700 underline" onClick={() => { setEditingId(p.id); setForm({ name: p.name, slug: p.slug, description: p.description, short_description: p.short_description, category: p.category, price_cents: p.price_cents / 100, cbd_percent: p.cbd_percent, thc_percent: p.thc_percent, stock: p.stock, sku: p.sku, image_url: p.image_url }); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Modifier</button></td>
                 <td className="px-4 py-3">{CATEGORY_LABELS[p.category]}</td>
                 <td className="px-4 py-3 text-right">{formatPrice(p.price_cents)}</td>
                 <td className="px-4 py-3 text-right">{p.stock}</td>

@@ -7,7 +7,7 @@ export default function ConfidentialitePage() {
     <LegalLayout title="Politique de confidentialité">
       <h2>Collecte des données</h2>
       <p>
-        Verde CBD collecte les données nécessaires au traitement de vos commandes :
+        CBD collecte les données nécessaires au traitement de vos commandes :
         nom, prénom, adresse email, adresse postale, numéro de téléphone. Ces
         données sont collectées lors de la création de compte et/ou du passage
         de commande.
@@ -32,7 +32,7 @@ export default function ConfidentialitePage() {
       <p>
         Conformément au RGPD, vous disposez d&apos;un droit d&apos;accès, de rectification,
         de suppression, de limitation et de portabilité de vos données. Contact :
-        contact@verde-cbd.fr
+        notre formulaire de contact
       </p>
     </LegalLayout>
   );

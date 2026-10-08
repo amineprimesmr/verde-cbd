@@ -1,41 +1,50 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Fraunces, Poppins } from "next/font/google";
 import "./globals.css";
 import { SiteChrome } from "@/components/layout/site-chrome";
-import { AgeGate } from "@/components/layout/age-gate";
+import { COMMERCE_ENABLED } from "@/lib/commerce";
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  display: "swap",
+  style: ["normal", "italic"],
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
+  robots: { index: COMMERCE_ENABLED, follow: COMMERCE_ENABLED },
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Verde CBD — Boutique CBD Premium en France",
-    template: "%s | Verde CBD",
+    default: "CBD — Boutique CBD Premium en France",
+    template: "%s | CBD",
   },
   description:
-    "Découvrez notre sélection de pre-rolls CBD, résines, vapes et accessoires. Produits certifiés, THC < 0,3%, analyses laboratoire. Livraison rapide en France.",
+    "Découvrez notre sélection de fleurs et pre-rolls CBD, résines, vapes et accessoires.",
   keywords: ["CBD", "pre-roll CBD", "résine CBD", "vape CBD", "e-liquide CBD", "chanvre", "France"],
   openGraph: {
     type: "website",
     locale: "fr_FR",
-    siteName: "Verde CBD",
-    title: "Verde CBD — Boutique CBD Premium en France",
+    siteName: "CBD",
+    title: "CBD — Boutique CBD Premium en France",
     description:
-      "Pre-rolls, résines, vapes et accessoires CBD certifiés. THC < 0,3%, analyses laboratoire, livraison rapide en France.",
-    images: [{ url: "/images/logo-cbd.png" }],
+      "Fleurs, pre-rolls, résines, vapes et accessoires CBD.",
+    images: [{ url: "/images/hero/hero-desktop.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Verde CBD — Boutique CBD Premium en France",
+    title: "CBD — Boutique CBD Premium en France",
     description:
-      "Pre-rolls, résines, vapes et accessoires CBD certifiés. THC < 0,3%, analyses laboratoire, livraison rapide en France.",
-    images: ["/images/logo-cbd.png"],
+      "Fleurs, pre-rolls, résines, vapes et accessoires CBD.",
+    images: ["/images/hero/hero-desktop.jpg"],
   },
 };
 
@@ -45,11 +54,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${poppins.variable} h-full scroll-smooth`}>
+    <html lang="fr" className={`${poppins.variable} ${fraunces.variable} h-full scroll-smooth`}>
       <body className="flex min-h-full flex-col antialiased">
-        <AgeGate>
-          <SiteChrome>{children}</SiteChrome>
-        </AgeGate>
+        {!COMMERCE_ENABLED && <div className="bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">Boutique de démonstration · Catalogue et visuels illustratifs · Aucun paiement réel</div>}
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

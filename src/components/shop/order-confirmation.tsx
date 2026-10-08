@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { CheckCircle, CreditCard, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BANK_DETAILS } from "@/lib/mollie";
-import { loadDevOrder } from "@/lib/dev-checkout";
+import { BANK_DETAILS, isBankTransferConfigured } from "@/lib/bank-details";
+import { DEV_ORDER_STORAGE_KEY } from "@/lib/dev-checkout";
 import { formatPrice, formatDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS } from "@/types";
 import type { Order, OrderItem } from "@/types";
@@ -23,19 +23,17 @@ export function OrderConfirmation({
   dev,
   serverOrder,
 }: OrderConfirmationProps) {
-  const [order, setOrder] = useState<(Order & { items?: OrderItem[] }) | null>(
-    serverOrder
-  );
   const isDev = dev === "1";
-
-  useEffect(() => {
-    if (serverOrder) {
-      setOrder(serverOrder);
-      return;
-    }
-    const devOrder = loadDevOrder(orderNumber);
-    if (devOrder) setOrder(devOrder);
-  }, [orderNumber, serverOrder]);
+  const serialized = useSyncExternalStore(
+    (notify) => { window.addEventListener("storage", notify); return () => window.removeEventListener("storage", notify); },
+    () => { try { return sessionStorage.getItem(DEV_ORDER_STORAGE_KEY) || ""; } catch { return ""; } },
+    () => ""
+  );
+  const demoOrder = useMemo(() => {
+    if (!isDev || !serialized) return null;
+    try { return (JSON.parse(serialized) as Record<string, Order & { items?: OrderItem[] }>)[orderNumber] ?? null; } catch { return null; }
+  }, [isDev, serialized, orderNumber]);
+  const order = serverOrder ?? demoOrder;
 
   const isPaidCard =
     order?.payment_method === "card" && order?.payment_status === "paid";
@@ -47,7 +45,7 @@ export function OrderConfirmation({
           <CheckCircle className="h-8 w-8 text-emerald-600" />
         </div>
         <h1 className="text-3xl font-bold text-stone-900">
-          {success ? "Commande confirmée !" : "Détails de commande"}
+          {isPaidCard ? "Paiement confirmé" : order ? "Commande enregistrée" : "Détails de commande"}
         </h1>
         <p className="mt-2 text-stone-500">
           Numéro de commande : <strong>{orderNumber}</strong>
@@ -136,7 +134,7 @@ export function OrderConfirmation({
         </div>
       )}
 
-      {(!order || order.payment_method === "bank_transfer") && !isPaidCard && (
+      {order?.payment_method === "bank_transfer" && isBankTransferConfigured() && !isPaidCard && (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-6">
           <h2 className="font-semibold text-amber-900">Paiement par virement</h2>
           <p className="mt-2 text-sm text-amber-800">

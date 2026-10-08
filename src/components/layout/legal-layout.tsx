@@ -8,7 +8,7 @@ export function LegalLayout({
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-        Verde CBD
+        CBD
       </p>
       <h1 className="mt-2 font-display text-3xl font-semibold text-foreground">
         {title}

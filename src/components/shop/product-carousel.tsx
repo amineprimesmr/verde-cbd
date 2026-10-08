@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ProductCarouselProps {
@@ -48,38 +47,35 @@ export function ProductCarousel({ children, className }: ProductCarouselProps) {
     <div className={cn("relative group/carousel", className)}>
       <div
         ref={scrollRef}
-        className="no-scrollbar flex gap-5 overflow-x-auto scroll-smooth pb-2 snap-x snap-mandatory"
+        className="no-scrollbar -mx-4 flex scroll-px-4 gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 snap-x snap-mandatory sm:-mx-6 sm:scroll-px-6 sm:gap-5 sm:px-6 lg:mx-0 lg:scroll-px-0 lg:px-0"
+        role="region"
+        aria-roledescription="carrousel"
+        aria-label="Produits"
+        tabIndex={0}
       >
         {children}
       </div>
 
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => scroll("left")}
-        disabled={!canScrollLeft}
-        className={cn(
-          "absolute -left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 rounded-full border-border bg-white shadow-md transition-opacity lg:flex",
-          !canScrollLeft && "opacity-0 pointer-events-none"
-        )}
-        aria-label="Précédent"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
-
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => scroll("right")}
-        disabled={!canScrollRight}
-        className={cn(
-          "absolute -right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 rounded-full border-border bg-white shadow-md transition-opacity lg:flex",
-          !canScrollRight && "opacity-0 pointer-events-none"
-        )}
-        aria-label="Suivant"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </Button>
+      <div className="pointer-events-none absolute -top-16 right-0 hidden gap-2 lg:flex">
+        <button
+          type="button"
+          onClick={() => scroll("left")}
+          disabled={!canScrollLeft}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground/40 disabled:cursor-default disabled:opacity-35"
+          aria-label="Produits précédents"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => scroll("right")}
+          disabled={!canScrollRight}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground/40 disabled:cursor-default disabled:opacity-35"
+          aria-label="Produits suivants"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -94,7 +90,7 @@ export function ProductCarouselItem({
   return (
     <div
       className={cn(
-        "w-[280px] shrink-0 snap-start sm:w-[300px] lg:w-[calc(25%-15px)]",
+        "w-[62vw] max-w-[300px] shrink-0 snap-start sm:w-[42vw] lg:w-[calc(25%-15px)] lg:max-w-none",
         className
       )}
     >

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       message?: string;
     };
 
-    if (!name || !email || !subject || !message) {
+    if (typeof name !== "string" || typeof email !== "string" || typeof subject !== "string" || typeof message !== "string" || !name.trim() || !subject.trim() || !message.trim() || name.length > 150 || subject.length > 200 || message.length > 5000 || email.length > 254) {
       return NextResponse.json(
         { error: "Tous les champs sont requis" },
         { status: 400 }

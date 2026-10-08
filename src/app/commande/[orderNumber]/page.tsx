@@ -2,17 +2,22 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { OrderConfirmation } from "@/components/shop/order-confirmation";
 import type { Order } from "@/types";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { verifyOrderAccessToken } from "@/lib/order-access";
 
 interface PageProps {
   params: Promise<{ orderNumber: string }>;
-  searchParams: Promise<{ success?: string; dev?: string }>;
+  searchParams: Promise<{ success?: string; dev?: string; token?: string }>;
 }
 
-async function getOrder(orderNumber: string): Promise<Order | null> {
+async function getOrder(orderNumber: string, token?: string): Promise<Order | null> {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    const supabase = await createClient();
+    const supabase = verifyOrderAccessToken(orderNumber, token)
+      ? getSupabaseAdmin()
+      : await createClient();
+    if (!supabase) return null;
     const { data: order } = await supabase
       .from("orders")
       .select("*, order_items(*)")
@@ -39,8 +44,8 @@ export default async function OrderConfirmationPage({
   searchParams,
 }: PageProps) {
   const { orderNumber } = await params;
-  const { success, dev } = await searchParams;
-  const order = await getOrder(orderNumber);
+  const { success, dev, token } = await searchParams;
+  const order = await getOrder(orderNumber, token);
 
   return (
     <OrderConfirmation

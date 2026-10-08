@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { cancelOrder, getCurrentUserId, persistOrder } from "@/app/api/checkout/persist-order";
 import { getMollie } from "@/lib/mollie";
 import { generateOrderNumber } from "@/lib/utils";
-import { calculateOrderTotal } from "@/lib/data/catalog";
+import { priceCartOnServer } from "@/lib/pricing-server";
+import { validateCheckoutContact } from "@/app/api/checkout/validation";
 import { sendOrderConfirmationEmail } from "@/lib/emails";
-
-interface CheckoutItem {
-  product_id: string;
-  product_name: string;
-  product_sku: string;
-  quantity: number;
-  unit_price_cents: number;
-}
+import { createOrderAccessToken } from "@/lib/order-access";
+import { isBankTransferConfigured } from "@/lib/bank-details";
+import { COMMERCE_ENABLED } from "@/lib/commerce";
 
 export async function POST(request: Request) {
+  if (!COMMERCE_ENABLED) {
+    return NextResponse.json({ error: "Cette boutique est en démonstration. Aucun paiement réel n'est accepté." }, { status: 503 });
+  }
   try {
     const body = await request.json();
     const {
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
       customer_notes,
       payment_method,
       items,
-      shipping_cents,
+      shipping_rate_id,
     } = body as {
       email: string;
       shipping_first_name: string;
@@ -52,29 +51,45 @@ export async function POST(request: Request) {
       billing_postal_code?: string;
       customer_notes?: string;
       payment_method: "card" | "bank_transfer";
-      items: CheckoutItem[];
-      shipping_cents: number;
+      items: unknown;
+      shipping_rate_id?: string;
     };
 
-    if (!items?.length) {
-      return NextResponse.json({ error: "Panier vide" }, { status: 400 });
+    const invalid = validateCheckoutContact(body);
+    if (invalid) {
+      return NextResponse.json({ error: invalid }, { status: 400 });
+    }
+    if (payment_method !== "card" && payment_method !== "bank_transfer") {
+      return NextResponse.json({ error: "Moyen de paiement invalide" }, { status: 400 });
+    }
+    if (payment_method === "card" && !getMollie()) {
+      return NextResponse.json(
+        { error: "Le paiement par carte est momentanément indisponible." },
+        { status: 503 }
+      );
+    }
+    if (payment_method === "bank_transfer" && !isBankTransferConfigured()) {
+      return NextResponse.json({ error: "Le paiement par virement est momentanément indisponible." }, { status: 503 });
     }
 
-    const subtotal_cents = items.reduce(
-      (sum, i) => sum + i.unit_price_cents * i.quantity,
-      0
-    );
-    const totals = calculateOrderTotal(subtotal_cents, shipping_cents);
+    // Prix, stock et livraison recalculés côté serveur — jamais ceux du client.
+    const pricing = await priceCartOnServer(items, shipping_rate_id);
+    if (!pricing.ok) {
+      return NextResponse.json(
+        { error: pricing.error, code: "CART_INVALID", issues: pricing.issues, products: pricing.products },
+        { status: pricing.status }
+      );
+    }
+    const { lines, totals } = pricing;
     const orderNumber = generateOrderNumber();
+    const orderToken = createOrderAccessToken(orderNumber);
+    const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL || request.url).origin;
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const userId = await getCurrentUserId();
 
     const orderData = {
       order_number: orderNumber,
-      user_id: user?.id ?? null,
+      user_id: userId,
       status: "pending" as const,
       payment_method,
       payment_status: "pending" as const,
@@ -117,98 +132,63 @@ export async function POST(request: Request) {
       delivered_at: null,
     };
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    let orderId: string | null = null;
-
-    if (supabaseUrl && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert(orderData)
-        .select("id")
-        .single();
-
-      if (orderError) {
-        console.error("Order insert error:", orderError);
-        return NextResponse.json(
-          { error: "Erreur lors de la création de la commande" },
-          { status: 500 }
-        );
-      }
-
-      orderId = order.id;
-
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        product_sku: item.product_sku,
-        quantity: item.quantity,
-        unit_price_cents: item.unit_price_cents,
-        total_cents: item.unit_price_cents * item.quantity,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error("Order items error:", itemsError);
-      }
-
-      for (const item of items) {
-        const { data: productData } = await supabase
-          .from("products")
-          .select("stock")
-          .eq("id", item.product_id)
-          .single();
-
-        if (productData) {
-          await supabase
-            .from("products")
-            .update({ stock: Math.max(0, productData.stock - item.quantity) })
-            .eq("id", item.product_id);
-        }
-      }
+    const persisted = await persistOrder(orderData, lines);
+    if (!persisted.ok) {
+      return NextResponse.json({ error: persisted.error }, { status: persisted.status });
     }
+    const { orderId, admin } = persisted;
 
     if (payment_method === "card") {
       const mollie = getMollie();
       if (mollie) {
-        const payment = await mollie.payments.create({
-          amount: {
-            currency: "EUR",
-            value: (totals.total / 100).toFixed(2),
-          },
-          description: `Commande ${orderNumber} — Verde CBD`,
-          redirectUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/commande/${orderNumber}?success=true`,
-          webhookUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/mollie`,
-          metadata: { order_number: orderNumber, order_id: orderId ?? "" },
-        });
+        try {
+          const payment = await mollie.payments.create({
+            amount: {
+              currency: "EUR",
+              value: (totals.total / 100).toFixed(2),
+            },
+            description: `Commande ${orderNumber} — CBD`,
+            redirectUrl: `${siteUrl}/commande/${orderNumber}?token=${orderToken}`,
+            webhookUrl: `${siteUrl}/api/webhooks/mollie`,
+            metadata: { order_number: orderNumber, order_id: orderId ?? "" },
+          });
 
-        if (orderId && supabaseUrl) {
-          await supabase
-            .from("orders")
-            .update({ mollie_payment_id: payment.id })
-            .eq("id", orderId);
+          if (orderId && admin) {
+            await admin
+              .from("orders")
+              .update({ mollie_payment_id: payment.id })
+              .eq("id", orderId);
+          }
+
+          return NextResponse.json({
+            order_number: orderNumber,
+            payment_url: payment.getCheckoutUrl(),
+          });
+        } catch (err) {
+          console.error("Mollie payment error:", err);
+          if (orderId && admin) await cancelOrder(admin, orderId, lines);
+          return NextResponse.json(
+            {
+              error:
+                "Le service de paiement ne répond pas. Aucun montant n'a été débité, merci de réessayer dans un instant.",
+            },
+            { status: 502 }
+          );
         }
-
-        return NextResponse.json({
-          order_number: orderNumber,
-          payment_url: payment.getCheckoutUrl(),
-        });
       }
     }
 
     await sendOrderConfirmationEmail({
       to: email,
       orderNumber,
-      items,
+      items: lines,
       totalCents: totals.total,
     });
 
     return NextResponse.json({
       order_number: orderNumber,
       payment_method,
+      order_token: orderToken,
     });
   } catch (error) {
     console.error("Checkout error:", error);

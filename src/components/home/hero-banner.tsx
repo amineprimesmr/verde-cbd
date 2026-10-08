@@ -1,137 +1,122 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { TrustpilotRating } from "@/components/home/trustpilot-rating-bar";
-
-const MOBILE_BANNER_WIDTH = 1254;
-const MOBILE_BANNER_HEIGHT = 1254;
+import { ArrowRight } from "lucide-react";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
+  hidden: { opacity: 0, y: 24 },
   visible: (delay: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, delay, ease },
+    transition: { duration: 0.9, delay, ease },
   }),
 };
 
-function HeroContent() {
+const HERO_ALT =
+  "Produits CBD posés sur une pierre naturelle, dans une lumière douce";
+
+/**
+ * Art direction : 9:16 sur mobile, 21:9 dès la tablette paysage.
+ * Les images sont servies telles quelles (images.unoptimized) : on référence
+ * directement les fichiers, getImageProps ne produirait pas de srcSet.
+ */
+function HeroPicture() {
   return (
-    <div className="w-full max-w-xl lg:max-w-2xl">
-      <motion.h1
-        custom={0}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-        className="font-display text-[2.5rem] font-medium leading-[1.05] tracking-tight text-white sm:text-[2.75rem] md:text-6xl lg:text-[4.25rem] lg:leading-[1.02]"
-      >
-        L&apos;équilibre
-        <br />
-        <span className="text-[#6dcc8a]">naturel.</span>
-      </motion.h1>
-
-      <motion.p
-        custom={0.08}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-        className="mt-5 max-w-sm text-[15px] leading-relaxed text-white/65 sm:mt-6 sm:max-w-md sm:text-lg lg:mt-7"
-      >
-        Des produits CBD premium, français &amp; éco-responsables.
-        <span className="hidden sm:inline">
-          {" "}
-          Pre-rolls, résines, vapes et accessoires sélectionnés avec exigence.
-        </span>
-      </motion.p>
-
-      <motion.div
-        custom={0.16}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-        className="mt-8 flex flex-col items-center sm:mt-9 lg:mt-10 lg:items-start"
-      >
-        <div className="flex w-full flex-col items-center gap-6 lg:w-max lg:items-stretch">
-          <Link href="/boutique" className="w-full">
-            <Button
-              size="lg"
-              className="h-[52px] w-full rounded-full bg-[#2d6a4f] px-8 text-base font-black uppercase tracking-[-0.02em] text-white shadow-[0_8px_32px_rgba(45,106,79,0.45)] transition-all duration-500 hover:bg-[#40916c] hover:shadow-[0_12px_40px_rgba(45,106,79,0.55)] active:scale-[0.98] sm:h-14 sm:text-lg sm:tracking-[-0.03em] sm:hover:scale-[1.02] lg:min-w-0"
-            >
-              Découvrir les offres
-            </Button>
-          </Link>
-
-          <TrustpilotRating className="w-auto lg:w-full lg:justify-start lg:text-left" />
-        </div>
-      </motion.div>
-    </div>
+    <picture>
+      <source media="(min-width: 768px)" srcSet="/images/hero/hero-desktop.jpg" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- <picture> pour l'art direction */}
+      <img
+        src="/images/hero/hero-mobile.jpg"
+        alt={HERO_ALT}
+        fetchPriority="high"
+        loading="eager"
+        decoding="async"
+        className="absolute inset-0 h-full w-full object-cover object-[center_75%] md:object-[70%_center]"
+      />
+    </picture>
   );
 }
 
 export function HeroBanner() {
   return (
-    <section className="relative overflow-hidden bg-[#050505]">
-      {/* ── Mobile — image native 1:1, pleine largeur, sans recadrage ── */}
-      <div className="relative w-full lg:hidden">
-        <Image
-          src="/images/bannermobile.png"
-          alt="Pre-rolls et produits CBD premium Verde"
-          width={MOBILE_BANNER_WIDTH}
-          height={MOBILE_BANNER_HEIGHT}
-          priority
-          unoptimized
-          sizes="100vw"
-          className="block h-auto w-full max-w-none"
-        />
+    <section
+      aria-labelledby="hero-title"
+      className="relative isolate flex min-h-[560px] items-end overflow-hidden bg-sand h-[calc(100svh-6rem)] lg:h-[calc(100svh-6.5rem)] lg:min-h-[640px] lg:items-center"
+    >
+      <motion.div
+        initial={{ scale: 1.06 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 1.8, ease }}
+        className="absolute inset-0 -z-10"
+      >
+        <HeroPicture />
+      </motion.div>
 
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#050505]/55 via-[#050505]/15 to-transparent"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#050505]/45 to-transparent"
-          aria-hidden
-        />
+      {/* Voile pour la lisibilité du texte */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/65 via-ink/15 to-transparent lg:bg-gradient-to-r lg:from-ink/55 lg:via-ink/15 lg:to-transparent"
+      />
 
-        <div className="absolute inset-x-0 top-0 px-5 pt-10 sm:px-8 sm:pt-14">
-          <HeroContent />
+      <div className="container-x pb-12 sm:pb-16 lg:pb-0">
+        <div className="max-w-xl text-primary-foreground lg:max-w-2xl">
+          <motion.p
+            custom={0.1}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            className="text-[11px] uppercase tracking-[0.22em] text-primary-foreground/85"
+          >
+            Chanvre européen · THC &lt; 0,3&nbsp;%
+          </motion.p>
+          <motion.h1
+            id="hero-title"
+            custom={0.2}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            className="mt-4 font-display text-[2.75rem] leading-[1.02] sm:text-6xl lg:text-[5.25rem]"
+          >
+            Le calme,
+            <br />
+            <em className="font-light italic">cultivé avec soin.</em>
+          </motion.h1>
+          <motion.p
+            custom={0.32}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            className="mt-5 max-w-md text-[15px] leading-relaxed text-primary-foreground/85 sm:text-base"
+          >
+            Fleurs, pre-rolls, résines et accessoires : explorez les
+            classiques du chanvre, dans une boutique pensée pour vous.
+          </motion.p>
+          <motion.div
+            custom={0.44}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            className="mt-8 flex flex-col gap-3 sm:flex-row"
+          >
+            <Link
+              href="/boutique"
+              className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary-foreground px-7 text-sm font-medium text-foreground hover:bg-white"
+            >
+              Découvrir la boutique
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
+            </Link>
+            <Link
+              href="/a-propos"
+              className="inline-flex h-12 items-center justify-center rounded-full border border-primary-foreground/50 px-7 text-sm font-medium text-primary-foreground hover:border-primary-foreground hover:bg-primary-foreground/10"
+            >
+              Notre démarche
+            </Link>
+          </motion.div>
         </div>
       </div>
-
-      {/* ── Desktop — banner.png ── */}
-      <div className="relative hidden min-h-[88vh] lg:block">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/banner.png"
-            alt="Pre-rolls et produits CBD premium Verde"
-            fill
-            priority
-            unoptimized
-            sizes="100vw"
-            className="object-cover object-center"
-          />
-        </div>
-
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/50 via-black/15 to-transparent"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04)_0%,transparent_70%)]"
-          aria-hidden
-        />
-
-        <div className="relative mx-auto flex min-h-[88vh] max-w-7xl flex-col justify-center px-10 pt-16">
-          <HeroContent />
-        </div>
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
     </section>
   );
 }

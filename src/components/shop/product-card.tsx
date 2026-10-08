@@ -1,167 +1,160 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Check, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Plus, Check } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { Product } from "@/types";
 import { CATEGORY_LABELS } from "@/types";
-import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
   className?: string;
+  /** Précharge l'image (cartes au-dessus de la ligne de flottaison). */
+  priority?: boolean;
+  /** Attribut sizes de next/image — à ajuster selon la grille parente. */
+  sizes?: string;
 }
 
-export function ProductCard({ product, className }: ProductCardProps) {
+function hasTag(product: Product, tag: string): boolean {
+  return product.tags.some((t) => t.toLowerCase() === tag);
+}
+
+export function getDiscountPercent(product: Product): number | null {
+  const compare = product.compare_at_price_cents;
+  if (!compare || compare <= product.price_cents) return null;
+  return Math.round(((compare - product.price_cents) / compare) * 100);
+}
+
+export function ProductCard({
+  product,
+  className,
+  priority = false,
+  sizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
+}: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
   const [added, setAdded] = useState(false);
+  const timer = useRef<number | null>(null);
 
-  const discount =
-    product.compare_at_price_cents &&
-    product.compare_at_price_cents > product.price_cents
-      ? Math.round(
-          ((product.compare_at_price_cents - product.price_cents) /
-            product.compare_at_price_cents) *
-            100
-        )
-      : null;
+  useEffect(
+    () => () => {
+      if (timer.current) window.clearTimeout(timer.current);
+    },
+    []
+  );
+
+  const discount = getDiscountPercent(product);
+  const isNew = hasTag(product, "nouveau");
+  const isBestSeller = hasTag(product, "best-seller") || product.is_featured;
+  const outOfStock = product.stock <= 0;
+  const primary = product.images[0] ?? product.image_url;
+  const secondary = product.images[1];
+  const href = `/produit/${product.slug}`;
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (product.stock === 0) return;
+    if (outOfStock) return;
     addItem(product);
     setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setAdded(false), 1800);
   }
 
+  const badge = outOfStock
+    ? { label: "Épuisé", tone: "bg-foreground/80 text-background" }
+    : discount
+      ? { label: `−${discount} %`, tone: "bg-[#8a3b2a] text-white" }
+      : isNew
+        ? { label: "Nouveau", tone: "bg-card text-foreground" }
+        : isBestSeller
+          ? { label: "Best-seller", tone: "bg-primary text-primary-foreground" }
+          : null;
+
   return (
-    <article
-      className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-white card-hover",
-        className
-      )}
-    >
-      <div className="relative aspect-[4/5] overflow-hidden bg-warm">
-        <Link
-          href={`/produit/${product.slug}`}
-          className="img-zoom absolute inset-0 block"
-        >
+    <article className={cn("group relative flex flex-col", className)}>
+      <div className="relative aspect-[4/5] overflow-hidden rounded-[4px] bg-cream">
+        <Link href={href} className="absolute inset-0 block" tabIndex={-1} aria-hidden>
           <Image
-            src={product.image_url}
-            alt={product.name}
+            src={primary}
+            alt=""
             fill
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, 25vw"
+            preload={priority}
+            sizes={sizes}
+            className={cn(
+              "object-cover transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]",
+              secondary && "md:group-hover:opacity-0"
+            )}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          {secondary && (
+            <Image
+              src={secondary}
+              alt=""
+              fill
+              sizes={sizes}
+              className="hidden object-cover opacity-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:block md:group-hover:scale-[1.03] md:group-hover:opacity-100"
+            />
+          )}
         </Link>
 
-        {discount && (
-          <Badge className="pointer-events-none absolute left-3 top-3 border-0 bg-red-500 text-white shadow-sm">
-            -{discount}%
-          </Badge>
-        )}
-        {product.is_featured && (
-          <Badge
-            className="pointer-events-none absolute right-3 top-3 border-0 bg-primary text-white shadow-sm"
-            variant="success"
+        {badge && (
+          <span
+            className={cn(
+              "pointer-events-none absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] sm:left-3 sm:top-3",
+              badge.tone
+            )}
           >
-            Best-seller
-          </Badge>
+            {badge.label}
+          </span>
         )}
 
-        <div className="absolute inset-x-3 bottom-3 z-10 flex translate-y-2 gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <Button
-            size="sm"
-            className="flex-1 shadow-lg"
-            onClick={handleAdd}
-            disabled={product.stock === 0}
-          >
-            <AnimatePresence mode="wait">
-              {added ? (
-                <motion.span
-                  key="added"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  className="flex items-center gap-1.5"
-                >
-                  <Check className="h-4 w-4" />
-                  Ajouté
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="add"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  className="flex items-center gap-1.5"
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                  Ajouter
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </Button>
-          <Link href={`/produit/${product.slug}`}>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="bg-white/95 shadow-lg hover:bg-white"
-              aria-label="Voir le produit"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+        {/* Ajout rapide */}
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={outOfStock}
+          aria-label={
+            added ? `${product.name} ajouté au panier` : `Ajouter ${product.name} au panier`
+          }
+          className={cn(
+            "absolute bottom-2.5 right-2.5 z-10 flex h-10 items-center justify-center gap-2 rounded-full bg-card/95 px-3 text-[13px] font-medium text-foreground shadow-[0_4px_16px_rgb(31_35_30/0.12)] backdrop-blur transition-[opacity,transform,background-color,color] duration-300 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-0 sm:bottom-3 sm:right-3",
+            "md:translate-y-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:focus-visible:translate-y-0 md:focus-visible:opacity-100",
+            added && "bg-primary text-primary-foreground md:translate-y-0 md:opacity-100"
+          )}
+        >
+          {added ? (
+            <Check className="h-4 w-4" aria-hidden />
+          ) : (
+            <Plus className="h-4 w-4" aria-hidden />
+          )}
+          <span className="hidden md:inline">{added ? "Ajouté" : "Ajout rapide"}</span>
+        </button>
       </div>
 
-      <div className="flex flex-1 flex-col p-4 lg:p-5">
-        <Badge variant="secondary" className="mb-2 w-fit text-[10px] uppercase tracking-wider">
+      <div className="flex flex-1 flex-col pt-3.5 sm:pt-4">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground sm:text-[11px]">
           {CATEGORY_LABELS[product.category]}
-        </Badge>
-        <Link href={`/produit/${product.slug}`}>
-          <h3 className="font-display text-base font-semibold leading-snug text-foreground transition-colors group-hover:text-primary line-clamp-2 lg:text-lg">
-            {product.name}
-          </h3>
-        </Link>
-        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-          {product.short_description}
         </p>
-        <div className="mt-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          <span>CBD {product.cbd_percent}%</span>
-          <span className="h-1 w-1 rounded-full bg-border" />
-          <span>THC &lt; {product.thc_percent}%</span>
-        </div>
-
-        <div className="mt-auto flex items-end justify-between pt-4">
-          <div>
-            <span className="font-display text-lg font-semibold text-primary lg:text-xl">
-              {formatPrice(product.price_cents)}
-            </span>
-            {product.compare_at_price_cents && (
-              <span className="ml-2 text-sm text-muted-foreground line-through">
-                {formatPrice(product.compare_at_price_cents)}
-              </span>
-            )}
-          </div>
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-9 w-9 shrink-0 lg:hidden"
-            onClick={handleAdd}
-            disabled={product.stock === 0}
-            aria-label="Ajouter au panier"
+        <h3 className="mt-1.5 text-sm leading-snug text-foreground sm:text-[15px]">
+          <Link
+            href={href}
+            className="line-clamp-2 after:absolute after:inset-0 after:content-['']"
           >
-            <ShoppingBag className="h-4 w-4" />
-          </Button>
+            {product.name}
+          </Link>
+        </h3>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-sm font-medium tabular-nums text-foreground sm:text-[15px]">
+            {formatPrice(product.price_cents)}
+          </span>
+          {discount && product.compare_at_price_cents && (
+            <span className="text-xs tabular-nums text-muted-foreground line-through decoration-foreground/30 sm:text-[13px]">
+              <span className="sr-only">Prix initial&nbsp;:</span>
+              {formatPrice(product.compare_at_price_cents)}
+            </span>
+          )}
         </div>
       </div>
     </article>

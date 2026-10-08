@@ -17,7 +17,7 @@ export function ConnexionForm() {
   const authError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(true);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
     authError === "auth"
@@ -91,7 +91,7 @@ export function ConnexionForm() {
           <p className="mt-3 text-[15px] leading-relaxed text-[#666]">
             Nous avons envoyé un lien de connexion à{" "}
             <span className="font-semibold text-black">{email.trim()}</span>.
-            Cliquez dessus pour vous connecter ou créer votre compte Verde CBD.
+            Cliquez dessus pour vous connecter ou créer votre compte CBD.
           </p>
 
           <button

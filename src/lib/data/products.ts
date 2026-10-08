@@ -5,6 +5,13 @@ import {
   STATIC_SHIPPING_RATES,
 } from "@/lib/data/catalog";
 import { isSupabaseConfigured, withTimeout } from "@/lib/supabase/config";
+import { COMMERCE_ENABLED } from "@/lib/commerce";
+
+function isAllowedProduct(product: Product): boolean {
+  return !/h4[-\s]?cbd|h2[-\s]?cbd|hhc|thcp|puff|jetable/i.test(
+    `${product.name} ${product.slug} ${product.tags.join(" ")}`
+  );
+}
 
 function mapDbProduct(row: Record<string, unknown>): Product {
   return {
@@ -66,7 +73,7 @@ async function fetchProductsFromDb(options?: {
   featured?: boolean;
   search?: string;
 }): Promise<Product[] | null> {
-  if (!isSupabaseConfigured()) return null;
+  if (!COMMERCE_ENABLED || !isSupabaseConfigured()) return null;
 
   try {
     const { createClient } = await import("@/lib/supabase/server");
@@ -98,8 +105,8 @@ async function fetchProductsFromDb(options?: {
       null
     );
 
-    if (result && !result.error && result.data && result.data.length > 0) {
-      return result.data.map(mapDbProduct);
+    if (result && !result.error && result.data) {
+      return result.data.map(mapDbProduct).filter(isAllowedProduct);
     }
   } catch {
     // fallback to static catalog
@@ -116,11 +123,12 @@ export const getProducts = cache(async (options?: {
 }): Promise<Product[]> => {
   const fromDb = await fetchProductsFromDb(options);
   if (fromDb) return fromDb;
+  if (COMMERCE_ENABLED) throw new Error("Le catalogue est momentanément indisponible.");
   return filterStaticProducts(options);
 });
 
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
-  if (isSupabaseConfigured()) {
+  if (COMMERCE_ENABLED && isSupabaseConfigured()) {
     try {
       const { createClient } = await import("@/lib/supabase/server");
       const supabase = await createClient();
@@ -138,13 +146,15 @@ export const getProductBySlug = cache(async (slug: string): Promise<Product | nu
       );
 
       if (result && !result.error && result.data) {
-        return mapDbProduct(result.data);
+        const product = mapDbProduct(result.data);
+        return isAllowedProduct(product) ? product : null;
       }
     } catch {
       // fallback
     }
   }
 
+  if (COMMERCE_ENABLED) return null;
   return STATIC_PRODUCTS.find((p) => p.slug === slug && p.is_active) ?? null;
 });
 
@@ -183,7 +193,7 @@ export async function getShippingRates(
     }
   }
 
-  return rates.filter((r) => subtotalCents >= r.min_order_cents);
+  return rates.filter((r) => subtotalCents >= r.min_order_cents && !/relais|mondial/i.test(r.name));
 }
 
 export { CATEGORIES, VAPE_SUBCATEGORIES, getBestShippingRate } from "@/lib/data/catalog";

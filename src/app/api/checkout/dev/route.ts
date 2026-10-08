@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { calculateOrderTotal } from "@/lib/data/catalog";
+import { getCurrentUserId } from "@/app/api/checkout/persist-order";
+import { priceCartOnServer } from "@/lib/pricing-server";
+import { validateCheckoutContact } from "@/app/api/checkout/validation";
 import { isDevCheckoutEnabled } from "@/lib/dev-checkout";
 import { generateOrderNumber } from "@/lib/utils";
 import type { Order, OrderItem } from "@/types";
-
-interface CheckoutItem {
-  product_id: string;
-  product_name: string;
-  product_sku: string;
-  quantity: number;
-  unit_price_cents: number;
-}
 
 interface DevCheckoutBody {
   email: string;
@@ -30,8 +22,8 @@ interface DevCheckoutBody {
   billing_city?: string;
   billing_postal_code?: string;
   customer_notes?: string;
-  items: CheckoutItem[];
-  shipping_cents: number;
+  items: unknown;
+  shipping_rate_id?: string;
 }
 
 export async function POST(request: Request) {
@@ -58,29 +50,30 @@ export async function POST(request: Request) {
       billing_postal_code,
       customer_notes,
       items,
-      shipping_cents,
+      shipping_rate_id,
     } = body;
 
-    if (!items?.length) {
-      return NextResponse.json({ error: "Panier vide" }, { status: 400 });
+    const invalid = validateCheckoutContact(body);
+    if (invalid) {
+      return NextResponse.json({ error: invalid }, { status: 400 });
     }
 
-    const subtotal_cents = items.reduce(
-      (sum, i) => sum + i.unit_price_cents * i.quantity,
-      0
-    );
-    const totals = calculateOrderTotal(subtotal_cents, shipping_cents);
+    const pricing = await priceCartOnServer(items, shipping_rate_id);
+    if (!pricing.ok) {
+      return NextResponse.json(
+        { error: pricing.error, code: "CART_INVALID", issues: pricing.issues, products: pricing.products },
+        { status: pricing.status }
+      );
+    }
+    const { lines, totals } = pricing;
     const orderNumber = generateOrderNumber();
     const now = new Date().toISOString();
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const userId = await getCurrentUserId();
 
     const orderData = {
       order_number: orderNumber,
-      user_id: user?.id ?? null,
+      user_id: userId,
       status: "processing" as const,
       payment_method: "card" as const,
       payment_status: "paid" as const,
@@ -123,57 +116,12 @@ export async function POST(request: Request) {
       delivered_at: null,
     };
 
-    const orderItems: Omit<OrderItem, "id">[] = items.map((item) => ({
+    const orderItems: Omit<OrderItem, "id">[] = lines.map((line) => ({
       order_id: "",
-      product_id: item.product_id,
-      product_name: item.product_name,
-      product_sku: item.product_sku,
-      quantity: item.quantity,
-      unit_price_cents: item.unit_price_cents,
-      total_cents: item.unit_price_cents * item.quantity,
+      ...line,
     }));
 
-    let orderId = crypto.randomUUID();
-
-    if (isSupabaseConfigured()) {
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert(orderData)
-        .select("id")
-        .single();
-
-      if (orderError) {
-        console.error("Dev order insert error:", orderError);
-        return NextResponse.json(
-          { error: "Erreur lors de la création de la commande" },
-          { status: 500 }
-        );
-      }
-
-      orderId = order.id;
-
-      const dbItems = orderItems.map((item) => ({
-        ...item,
-        order_id: orderId,
-      }));
-
-      await supabase.from("order_items").insert(dbItems);
-
-      for (const item of items) {
-        const { data: productData } = await supabase
-          .from("products")
-          .select("stock")
-          .eq("id", item.product_id)
-          .single();
-
-        if (productData) {
-          await supabase
-            .from("products")
-            .update({ stock: Math.max(0, productData.stock - item.quantity) })
-            .eq("id", item.product_id);
-        }
-      }
-    }
+    const orderId = crypto.randomUUID();
 
     const order: Order & { items: OrderItem[] } = {
       id: orderId,

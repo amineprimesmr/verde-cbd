@@ -3,6 +3,7 @@ import type { Order, OrderItem } from "@/types";
 export function isDevCheckoutEnabled(): boolean {
   return (
     process.env.NODE_ENV === "development" ||
+    process.env.NEXT_PUBLIC_COMMERCE_ENABLED !== "true" ||
     process.env.ENABLE_DEV_CHECKOUT === "true"
   );
 }

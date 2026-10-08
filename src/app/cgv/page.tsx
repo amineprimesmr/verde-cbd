@@ -10,7 +10,7 @@ export default function CGVPage() {
       <h2>Article 1 — Objet</h2>
       <p>
         Les présentes Conditions Générales de Vente (CGV) régissent les relations
-        contractuelles entre Verde CBD SAS et tout client souhaitant acheter des
+        contractuelles entre CBD SAS et tout client souhaitant acheter des
         produits CBD via le site verde-cbd.fr.
       </p>
 
@@ -35,7 +35,7 @@ export default function CGVPage() {
         Les commandes sont expédiées sous 24 à 48h ouvrées après confirmation du
         paiement. Les délais de livraison varient selon le mode choisi (Colissimo,
         Mondial Relay). La livraison est gratuite à partir de 80€ d&apos;achat.
-        Verde CBD livre exclusivement en France métropolitaine.
+        CBD livre exclusivement en France métropolitaine.
       </p>
 
       <h2>Article 5 — Droit de rétractation</h2>
@@ -49,7 +49,7 @@ export default function CGVPage() {
 
       <h2>Article 6 — Responsabilité</h2>
       <p>
-        Verde CBD s&apos;engage à fournir des produits conformes à leur description.
+        CBD s&apos;engage à fournir des produits conformes à leur description.
         Le client est seul responsable de l&apos;usage qu&apos;il fait des produits
         achetés. Les produits CBD ne sont pas des médicaments.
       </p>

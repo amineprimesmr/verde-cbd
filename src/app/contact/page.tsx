@@ -82,7 +82,7 @@ export default function ContactPage() {
       )}
 
       <div className="mt-8 rounded-xl border border-stone-200 bg-white p-6 text-sm text-stone-600">
-        <p><strong>Email :</strong> contact@verde-cbd.fr</p>
+        <p>Utilisez le formulaire pour contacter la boutique.</p>
         <p className="mt-1"><strong>Téléphone :</strong> 01 23 45 67 89</p>
         <p className="mt-1"><strong>Horaires :</strong> Lun-Ven, 9h-18h</p>
       </div>

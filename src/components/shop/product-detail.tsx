@@ -13,11 +13,12 @@ import {
   ProductStickyCart,
   ProductGuaranteeBanner,
   ProductBenefitsGrid,
-  ProductQuoteBlock,
   ProductDifferenceSection,
   ProductUsageSection,
 } from "@/components/shop/product/product-sections";
 import { useCartStore } from "@/store/cart-store";
+import { FrequentlyBoughtTogether } from "@/components/shop/upsell/frequently-bought-together";
+import { useCatalog } from "@/components/shop/upsell/use-catalog";
 import { CATEGORY_LABELS, type Product } from "@/types";
 import {
   getProductBenefits,
@@ -26,18 +27,39 @@ import {
   getAccordionSections,
   getBrutalistAccordions,
   getDifferenceItems,
-  getScientificQuote,
   getUsageSteps,
 } from "@/lib/data/product-page-content";
+
+const HEALTH_CLAIM = /relax|stress|anxi|sommeil|dorm|douleur|apais|études|étude|scientifique/i;
 
 interface ProductDetailProps {
   product: Product;
   relatedProducts: Product[];
+  variants?: Product[];
 }
 
-export function ProductDetail({ product, relatedProducts }: ProductDetailProps) {
+export function ProductDetail({ product, relatedProducts, variants = [] }: ProductDetailProps) {
   const addItem = useCartStore((s) => s.addItem);
   const [added, setAdded] = useState(false);
+  const catalog = useCatalog();
+
+  // « Vous aimerez aussi » : même catégorie d'abord, complété par le catalogue.
+  const alsoLike = useMemo(() => {
+    const seen = new Set<string>([product.id]);
+    const pool = [
+      ...relatedProducts,
+      ...catalog.filter((p) => p.category === product.category),
+      ...catalog.filter((p) => p.is_featured),
+    ];
+    const out: Product[] = [];
+    for (const p of pool) {
+      if (seen.has(p.id) || !p.is_active || p.stock <= 0) continue;
+      seen.add(p.id);
+      out.push(p);
+      if (out.length === 4) break;
+    }
+    return out;
+  }, [relatedProducts, catalog, product.id, product.category]);
 
   const packs = useMemo(
     () => getPackOptions(product.price_cents, product.compare_at_price_cents),
@@ -46,25 +68,22 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
 
   const [selectedPack, setSelectedPack] = useState<PackOption>(packs[0]);
 
-  const images = useMemo(() => {
-    const base = product.images.length > 0 ? product.images : [product.image_url];
-    const amnesiaFirst = "/images/Amnesia1.png";
+  const images = useMemo(
+    () => (product.images.length > 0 ? product.images : [product.image_url]).slice(0, 4),
+    [product.images, product.image_url]
+  );
 
-    if (product.category === "fleurs") {
-      const rest = base.filter((img) => img !== amnesiaFirst);
-      return [amnesiaFirst, ...rest].slice(0, 4);
-    }
-
-    return base.slice(0, 4);
-  }, [product]);
-
-  const benefits = getProductBenefits(product.category);
-  const faqs = getProductFaqs(product.category);
+  // Pas d'allégation santé (relaxation, stress, sommeil, études) sur la fiche.
+  const benefits = getProductBenefits(product.category, product.tags.includes("fleur")).filter(
+    (b) => !HEALTH_CLAIM.test(b.label)
+  );
+  const faqs = getProductFaqs(product.category, product.tags.includes("fleur"));
   const accordionItems = getAccordionSections(product);
-  const brutalistItems = getBrutalistAccordions(product);
+  const brutalistItems = getBrutalistAccordions(product).filter(
+    (item) => !["studies", "references"].includes(item.id) && !HEALTH_CLAIM.test(item.content)
+  );
   const differenceItems = getDifferenceItems();
-  const usageSteps = getUsageSteps(product.category);
-  const quote = getScientificQuote(product.category);
+  const usageSteps = getUsageSteps(product.category, product.tags.includes("fleur"));
 
   const displayPrice = selectedPack.priceCents;
   const displayCompare = selectedPack.compareCents;
@@ -77,20 +96,20 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
   }
 
   return (
-    <div className="bg-white pb-28 lg:pb-8">
-      <nav className="mx-auto hidden max-w-7xl px-4 py-4 text-xs text-black/50 lg:block lg:px-8">
-        <Link href="/" className="hover:text-black">Accueil</Link>
+    <div className="bg-background pb-28 lg:pb-8">
+      <nav className="mx-auto hidden max-w-7xl px-4 py-4 text-xs text-foreground/50 lg:block lg:px-8">
+        <Link href="/" className="hover:text-foreground">Accueil</Link>
         <span className="mx-2">/</span>
-        <Link href="/boutique" className="hover:text-black">Boutique</Link>
+        <Link href="/boutique" className="hover:text-foreground">Boutique</Link>
         <span className="mx-2">/</span>
         <Link
           href={`/boutique?category=${product.category}`}
-          className="hover:text-black"
+          className="hover:text-foreground"
         >
           {CATEGORY_LABELS[product.category]}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-black">{product.name}</span>
+        <span className="text-foreground">{product.name}</span>
       </nav>
 
       <div className="lg:mx-auto lg:grid lg:max-w-7xl lg:grid-cols-2 lg:gap-12 lg:px-8">
@@ -100,15 +119,24 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
 
         <div className="lg:py-4">
           <div className="px-4 pt-3 pb-4">
-            <h1 className="text-2xl font-bold leading-tight text-black sm:text-3xl">
+            <h1 className="font-display text-3xl leading-[1.1] text-foreground sm:text-4xl">
               {product.name}
             </h1>
-            <p className="mt-3 text-sm leading-relaxed text-black/70">
-              {product.short_description}. CBD {product.cbd_percent}%, THC &lt;{" "}
-              {product.thc_percent}%.
+            <p className="mt-3 text-sm leading-relaxed text-foreground/70">
+              {product.short_description}.
+              {product.cbd_percent > 0 && ` CBD ${product.cbd_percent} %. THC : ${product.thc_percent} %.`}
               {product.coa_url && " Certificat d'analyse disponible."}
             </p>
           </div>
+
+          {variants.length > 1 && (
+            <div className="px-4 pb-5">
+              <p className="mb-3 text-sm font-medium">Format du sachet</p>
+              <div className="flex gap-2">
+                {variants.map((variant) => <Link key={variant.id} href={`/produit/${variant.slug}`} aria-current={variant.id === product.id ? "page" : undefined} className={`rounded-full border px-5 py-3 text-sm ${variant.id === product.id ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary"}`}>{variant.weight_grams} g</Link>)}
+              </div>
+            </div>
+          )}
 
           <ProductBenefitsGrid benefits={benefits} />
 
@@ -128,16 +156,16 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
 
           <ProductGuaranteeBanner />
 
+          {catalog.length > 0 && (
+            <div className="px-4 lg:px-4">
+              <FrequentlyBoughtTogether product={product} catalog={catalog} />
+            </div>
+          )}
+
           <div id="composition" className="scroll-mt-20">
             <ProductAccordion items={accordionItems} />
           </div>
         </div>
-      </div>
-
-      <ProductQuoteBlock quote={quote} />
-
-      <div className="bg-[#fff8e1] px-4 py-3 text-center text-xs text-black/60">
-        Études cliniques sur le cannabidiol (CBD) — PubMed, 2024
       </div>
 
       <ProductAccordion items={brutalistItems} variant="brutalist" />
@@ -145,8 +173,8 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
       <ProductUsageSection steps={usageSteps} />
       <ProductDifferenceSection items={differenceItems} />
 
-      <section id="faq" className="scroll-mt-20 bg-white px-4 pt-8">
-        <h2 className="text-xl font-bold text-black">Questions fréquentes</h2>
+      <section id="faq" className="scroll-mt-20 bg-background px-4 pt-8">
+        <h2 className="text-xl font-bold text-foreground">Questions fréquentes</h2>
         <ProductAccordion
           items={faqs.map((f, i) => ({
             id: `faq-${i}`,
@@ -158,13 +186,23 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
         />
       </section>
 
-      {relatedProducts.length > 0 && (
-        <section className="border-t border-[#eee] bg-[#fafafa] px-4 py-12">
-          <h2 className="text-lg font-bold text-black">Produits similaires</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {relatedProducts.slice(0, 4).map((p) => (
+      {alsoLike.length > 0 && (
+        <section className="border-t border-border bg-cream px-4 py-12">
+          <div className="mx-auto max-w-7xl lg:px-4">
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-lg font-bold text-foreground sm:text-xl">Vous aimerez aussi</h2>
+              <Link
+                href={`/boutique?category=${product.category}`}
+                className="text-sm text-foreground/60 underline underline-offset-2 hover:text-foreground"
+              >
+                Tout voir
+              </Link>
+            </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {alsoLike.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
+          </div>
           </div>
         </section>
       )}

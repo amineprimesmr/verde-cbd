@@ -1,28 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf9f6;
-  --foreground: #1a1a1a;
-  --muted: #6b6b6b;
-  --muted-foreground: #8a8a8a;
-  --card: #ffffff;
-  --border: #e8e4df;
-  --primary: #1b4332;
-  --primary-foreground: #ffffff;
-  --primary-light: #2d6a4f;
-  --accent: #52796f;
-  --accent-soft: #d8f3dc;
-  --cream: #f5f0e8;
-  --warm: #ede8e0;
-  --shadow-sm: 0 1px 2px rgb(26 26 26 / 0.04);
-  --shadow-md: 0 4px 16px rgb(26 26 26 / 0.06);
-  --shadow-lg: 0 12px 40px rgb(26 26 26 / 0.08);
-  --shadow-xl: 0 24px 64px rgb(26 26 26 / 0.1);
+  /* Naturel premium — crème, sable, pierre, sauge profonde */
+  --background: #f7f3ec;
+  --foreground: #1f231e;
+  --muted: #4f524b;
+  --muted-foreground: #5b5e56;
+  --card: #fffdf9;
+  --border: #e4ddd0;
+  --primary: #2f4637;
+  --primary-foreground: #fbf8f2;
+  --primary-light: #43604c;
+  --accent: #4b5e45;
+  --accent-soft: #e4e8da;
+  --cream: #f1ebe0;
+  --warm: #ebe4d6;
+  --sand: #e2d8c6;
+  --stone: #cfc6b5;
+  --ink: #1f231e;
+  --shadow-sm: 0 1px 2px rgb(31 35 30 / 0.04);
+  --shadow-md: 0 4px 16px rgb(31 35 30 / 0.06);
+  --shadow-lg: 0 12px 40px rgb(31 35 30 / 0.08);
+  --shadow-xl: 0 24px 64px rgb(31 35 30 / 0.1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --duration-fast: 150ms;
   --duration-normal: 300ms;
   --duration-slow: 500ms;
+  --header-h: 4rem;
 }
 
 @theme inline {
@@ -39,8 +44,11 @@
   --color-accent-soft: var(--accent-soft);
   --color-cream: var(--cream);
   --color-warm: var(--warm);
+  --color-sand: var(--sand);
+  --color-stone: var(--stone);
+  --color-ink: var(--ink);
   --font-sans: var(--font-poppins);
-  --font-display: var(--font-poppins);
+  --font-display: var(--font-fraunces);
 }
 
 * {
@@ -79,8 +87,58 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-poppins), system-ui, sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  font-optical-sizing: auto;
+}
+
+/* Focus visible global, accessible sur fonds clairs et sombres */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.container-x {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 88rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-x {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-x {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* Soulignement animé pour liens éditoriaux */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size var(--duration-normal) var(--ease-out-quart);
+}
+
+.link-underline:hover,
+.link-underline:focus-visible {
+  background-size: 100% 1px;
 }
 
 /* Smooth link & button transitions */
@@ -122,7 +180,7 @@ button {
 
 /* Glass effect */
 .glass {
-  background: rgb(255 255 255 / 0.85);
+  background: rgb(247 243 236 / 0.86);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -227,15 +285,32 @@ button {
 
 /* Section spacing */
 .section-padding {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  padding-top: 4.5rem;
+  padding-bottom: 4.5rem;
 }
 
 @media (min-width: 1024px) {
   .section-padding {
-    padding-top: 6rem;
-    padding-bottom: 6rem;
+    padding-top: 7.5rem;
+    padding-bottom: 7.5rem;
   }
+}
+
+/* FAQ <details> — chevron animé */
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] .details-icon {
+  transform: rotate(45deg);
+}
+
+.details-icon {
+  transition: transform var(--duration-normal) var(--ease-out-quart);
 }
 
 /* Focus ring */

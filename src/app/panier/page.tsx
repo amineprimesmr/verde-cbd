@@ -1,20 +1,18 @@
 import { CartContent } from "@/components/shop/cart-content";
+import { getProducts } from "@/lib/data/products";
 
 export const metadata = {
   title: "Panier",
 };
 
-export default function PanierPage() {
+export default async function PanierPage() {
+  const catalog = await getProducts();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-        Panier
-      </p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-foreground">
-        Mon panier
-      </h1>
+      <h1 className="text-3xl font-bold text-foreground">Mon panier</h1>
       <div className="mt-8">
-        <CartContent />
+        <CartContent catalog={catalog} />
       </div>
     </div>
   );

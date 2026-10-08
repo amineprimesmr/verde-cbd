@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, HelpCircle } from "lucide-react";
+import { Lock, RotateCcw, Truck } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { getLineCompareCents, getLinePriceCents } from "@/lib/pricing";
 import { formatPrice, cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
@@ -17,18 +19,17 @@ function getProductSubtitle(product: Product) {
   return product.short_description.split(",")[0]?.trim() ?? "";
 }
 
-function getDiscountBadge(product: Product) {
-  if (!product.compare_at_price_cents) return null;
-  const pct = Math.round(
-    (1 - product.price_cents / product.compare_at_price_cents) * 100
-  );
+function getDiscountBadge(product: Product, quantity: number) {
+  const line = getLinePriceCents(product, quantity);
+  const compare = getLineCompareCents(product, quantity);
+  const pct = Math.round((1 - line / compare) * 100);
   return pct > 0 ? `-${pct}%` : null;
 }
 
 const TRUST_ITEMS = [
-  "Zéro risque, garantie 30 jours",
-  "+500 avis 5/5",
-  "Paiement 100% sécurisé & crypté",
+  { icon: Lock, text: "Paiement sécurisé par Mollie (3-D Secure)" },
+  { icon: Truck, text: "Expédition discrète et suivie" },
+  { icon: RotateCcw, text: "Retours sous 14 jours (produits non ouverts)" },
 ];
 
 const FOOTER_LINKS = [
@@ -45,7 +46,10 @@ interface CheckoutOrderSummaryProps {
   items: CartLineItem[];
   subtotalCents: number;
   shippingCents: number;
+  taxCents?: number;
   totalCents: number;
+  /** Adresse non saisie : frais de port encore indicatifs. */
+  shippingPending?: boolean;
   discountCode: string;
   onDiscountCodeChange: (value: string) => void;
   className?: string;
@@ -56,20 +60,28 @@ export function CheckoutOrderSummary({
   items,
   subtotalCents,
   shippingCents,
+  taxCents,
   totalCents,
-  discountCode,
-  onDiscountCodeChange,
+  shippingPending = false,
   className,
   showFooter = true,
 }: CheckoutOrderSummaryProps) {
   return (
-    <div className={cn("text-black", className)}>
+    <div className={cn("text-foreground", className)}>
       <div className="space-y-5">
+        <AnimatePresence initial={false}>
         {items.map(({ product, quantity }) => {
-          const badge = getDiscountBadge(product);
+          const badge = getDiscountBadge(product, quantity);
           return (
-            <div key={product.id} className="flex gap-4">
-              <div className="relative h-[62px] w-[62px] shrink-0 overflow-hidden rounded-lg border border-[#e5e5e5] bg-white">
+            <motion.div
+              key={product.id}
+              layout
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex gap-4"
+            >
+              <div className="relative h-[62px] w-[62px] shrink-0 overflow-hidden rounded-lg border border-border bg-card">
                 <Image
                   src={product.image_url}
                   alt={product.name}
@@ -77,100 +89,90 @@ export function CheckoutOrderSummary({
                   className="object-cover"
                   sizes="62px"
                 />
-                <span className="absolute -right-1.5 -top-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-[#707070] px-1 text-[11px] font-bold text-white">
+                <span className="absolute -right-1.5 -top-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-[#707070] px-1 text-[11px] font-bold text-primary-foreground">
                   {quantity}
                 </span>
               </div>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[15px] font-semibold leading-snug text-black">
+                    <p className="text-[15px] font-semibold leading-snug text-foreground">
                       {product.name}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span className="text-[13px] text-[#707070]">
+                      <span className="text-[13px] text-muted-foreground">
                         {getProductSubtitle(product)}
                       </span>
                       {badge && (
-                        <span className="rounded bg-[#f2f2f2] px-1.5 py-0.5 text-[11px] font-semibold text-[#707070]">
+                        <span className="rounded bg-cream px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
                           {badge}
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className="shrink-0 text-[15px] font-semibold text-black">
-                    {formatCheckoutPrice(product.price_cents * quantity)}
+                  <span className="shrink-0 text-[15px] font-semibold text-foreground">
+                    {formatCheckoutPrice(getLinePriceCents(product, quantity))}
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
+        </AnimatePresence>
       </div>
 
-      <div className="mt-6 flex gap-2">
-        <input
-          value={discountCode}
-          onChange={(e) => onDiscountCodeChange(e.target.value)}
-          placeholder="Code de réduction ou carte-cadeau"
-          className="h-[52px] min-w-0 flex-1 rounded-[10px] border border-[#d9d9d9] bg-white px-4 text-[15px] text-black placeholder:text-[#999] focus:border-black focus:outline-none focus:ring-1 focus:ring-black/10"
-        />
-        <button
-          type="button"
-          className="shrink-0 rounded-[10px] border border-[#d9d9d9] bg-[#f0f0f0] px-5 text-sm font-semibold text-[#707070] transition-colors hover:border-[#999] hover:text-black"
-        >
-          Valider
-        </button>
-      </div>
-
-      <div className="mt-6 space-y-3 border-t border-[#e1e1e1] pt-6 text-[15px]">
-        <div className="flex items-center justify-between text-[#707070]">
+      <div className="mt-6 space-y-3 border-t border-border pt-6 text-[15px]">
+        <div className="flex items-center justify-between text-muted-foreground">
           <span>Sous-total</span>
-          <span className="text-black">
+          <span className="text-foreground">
             {formatCheckoutPrice(subtotalCents)}
           </span>
         </div>
-        <div className="flex items-center justify-between text-[#707070]">
+        <div className="flex items-center justify-between text-muted-foreground">
           <span>Expédition</span>
-          <span className="font-medium text-black">
-            {shippingCents === 0 ? "OFFERT" : formatCheckoutPrice(shippingCents)}
+          <span className="font-medium text-foreground">
+            {shippingCents === 0 ? (
+              <span className="text-primary">OFFERTE</span>
+            ) : shippingPending ? (
+              <span className="text-[13px] font-normal text-muted-foreground">
+                dès {formatCheckoutPrice(shippingCents)}
+              </span>
+            ) : (
+              formatCheckoutPrice(shippingCents)
+            )}
           </span>
         </div>
         <div className="flex items-center justify-between pt-1">
-          <span className="text-[17px] font-semibold text-black">Total</span>
+          <span className="text-[17px] font-semibold text-foreground">Total</span>
           <div className="text-right">
-            <span className="text-[12px] font-medium text-[#707070]">EUR </span>
-            <span className="text-[22px] font-bold tracking-tight text-black">
+            <span className="text-[12px] font-medium text-muted-foreground">EUR </span>
+            <span className="text-[22px] font-bold tracking-tight text-foreground">
               {formatCheckoutPrice(totalCents)}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-[10px] bg-[#ececec] px-4 py-3 text-[13px] text-[#707070]">
-        <span>
-          Sous-total TTC{" "}
-          <span className="font-semibold text-black">
-            {formatCheckoutPrice(subtotalCents)}
-          </span>
-        </span>
-        <HelpCircle className="h-4 w-4 shrink-0" />
-      </div>
+      {taxCents !== undefined && (
+        <p className="mt-2 text-right text-[12px] text-muted-foreground">
+          Dont TVA {formatCheckoutPrice(taxCents)}
+        </p>
+      )}
 
       <ul className="mt-8 space-y-3">
-        {TRUST_ITEMS.map((text) => (
+        {TRUST_ITEMS.map(({ icon: Icon, text }) => (
           <li
             key={text}
-            className="flex items-center gap-2.5 text-[14px] font-bold text-black"
+            className="flex items-center gap-2.5 text-[13px] font-semibold text-foreground"
           >
-            <Heart className="h-4 w-4 fill-[#f5c518] text-[#f5c518]" />
+            <Icon className="h-4 w-4 shrink-0" />
             {text}
           </li>
         ))}
       </ul>
 
       {showFooter && (
-        <nav className="mt-10 grid grid-cols-2 gap-x-4 gap-y-3 text-[12px] text-[#1773b0]">
+        <nav className="mt-10 grid grid-cols-2 gap-x-4 gap-y-3 text-[12px] text-accent">
           {FOOTER_LINKS.map((link) => (
             <Link
               key={`${link.href}-${link.label}`}

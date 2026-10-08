@@ -47,3 +47,6 @@ supabase/.temp
 *.tsbuildinfo
 next-env.d.ts
 skills-lock.json
+
+# hors iCloud (le Bureau est synchronisé)
+/node_modules.nosync

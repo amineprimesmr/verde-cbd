@@ -9,10 +9,3 @@ export function getMollie() {
   }
   return mollie;
 }
-
-export const BANK_DETAILS = {
-  iban: "FR76 1234 5678 9012 3456 7890 123",
-  bic: "BNPAFRPPXXX",
-  beneficiary: "Verde CBD SAS",
-  reference: "Numéro de commande",
-};

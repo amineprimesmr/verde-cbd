@@ -1,63 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertCircle,
   ChevronDown,
-  Clock,
-  HelpCircle,
+  Landmark,
+  Loader2,
   Lock,
-  Search,
+  RotateCcw,
   ShieldCheck,
+  Truck,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { formatPrice, cn } from "@/lib/utils";
-import type { ShippingRate } from "@/types";
+import type { Product, ShippingRate } from "@/types";
 import {
-  calculateOrderTotal,
   FREE_SHIPPING_THRESHOLD,
-} from "@/lib/data/catalog";
-import { DEV_CHECKOUT_DEFAULTS } from "@/lib/dev-checkout";
+  getLinePriceCents,
+  getOrderTotals,
+  getShippingCents,
+} from "@/lib/pricing";
+import { DEV_CHECKOUT_DEFAULTS, saveDevOrder } from "@/lib/dev-checkout";
 import { DevCheckoutPanel } from "@/components/shop/dev-checkout-panel";
 import { CheckoutOrderSummary } from "@/components/shop/checkout-order-summary";
-import { SatisfiedClientsBadge } from "@/components/shop/satisfied-clients-badge";
+import { OrderBump } from "@/components/shop/upsell/order-bump";
+import { useCatalog } from "@/components/shop/upsell/use-catalog";
 import { Logo } from "@/components/layout/logo";
 
 const checkoutSchema = z.object({
-  email: z.string().email("Email invalide"),
-  shipping_first_name: z.string().min(2, "Prénom requis"),
-  shipping_last_name: z.string().min(2, "Nom requis"),
-  shipping_address_line1: z.string().min(5, "Adresse requise"),
+  email: z.string().trim().email("Saisissez une adresse e-mail valide (ex. nom@exemple.fr)"),
+  shipping_first_name: z.string().trim().min(2, "Saisissez votre prénom"),
+  shipping_last_name: z.string().trim().min(2, "Saisissez votre nom"),
+  shipping_address_line1: z
+    .string()
+    .trim()
+    .min(5, "Saisissez votre adresse (numéro et rue)"),
   shipping_address_line2: z.string().optional(),
-  shipping_city: z.string().min(2, "Ville requise"),
+  shipping_city: z.string().trim().min(2, "Saisissez votre ville"),
   shipping_postal_code: z
     .string()
-    .regex(/^\d{5}$/, "Code postal invalide (5 chiffres)"),
-  shipping_phone: z.string().min(10, "Téléphone requis"),
+    .trim()
+    .regex(/^\d{5}$/, "Le code postal doit contenir 5 chiffres"),
+  shipping_phone: z
+    .string()
+    .trim()
+    .regex(
+      /^(?:(?:\+|00)33\s?|0)[1-9](?:[\s.-]?\d{2}){4}$/,
+      "Numéro invalide (ex. 06 12 34 56 78)"
+    ),
   billing_same_as_shipping: z.boolean(),
+  billing_first_name: z.string().optional(),
+  billing_last_name: z.string().optional(),
+  billing_address_line1: z.string().optional(),
+  billing_city: z.string().optional(),
+  billing_postal_code: z.string().optional(),
   marketing_opt_in: z.boolean().optional(),
   sms_updates: z.boolean().optional(),
-  payment_method: z.enum(["card", "paypal"]),
+  payment_method: z.enum(["card", "bank_transfer"]),
   age_confirmed: z.literal(true),
   terms_accepted: z.literal(true),
+}).superRefine((data, ctx) => {
+  if (data.billing_same_as_shipping) return;
+  for (const field of ["billing_first_name", "billing_last_name", "billing_address_line1", "billing_city"] as const) {
+    if ((data[field]?.trim().length ?? 0) < 2) ctx.addIssue({ code: "custom", path: [field], message: "Champ de facturation requis" });
+  }
+  if (!/^\d{5}$/.test(data.billing_postal_code ?? "")) ctx.addIssue({ code: "custom", path: ["billing_postal_code"], message: "Code postal invalide" });
 });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
 interface CheckoutFormProps {
   shippingRates: ShippingRate[];
-}
-
-function formatCheckoutPrice(cents: number) {
-  return formatPrice(cents).replace(/\u00a0/g, " ");
+  catalog?: Product[];
+  demoMode?: boolean;
 }
 
 const checkoutInputClass =
-  "h-[52px] w-full rounded-[10px] border border-[#d9d9d9] bg-white px-4 text-[15px] text-black placeholder:text-[#999] focus:border-black focus:outline-none focus:ring-1 focus:ring-black/10";
+  "h-[52px] w-full rounded-[10px] border border-border bg-card px-4 text-[15px] text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground focus:outline-none focus:ring-1 focus:ring-black/10 aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-red-500/10";
 
 function CheckoutField({
   error,
@@ -69,7 +94,20 @@ function CheckoutField({
   return (
     <div>
       {children}
-      {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+      <AnimatePresence initial={false}>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-1.5 flex items-center gap-1 text-xs text-red-600"
+            role="alert"
+          >
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -83,9 +121,7 @@ function SectionTitle({
 }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-4">
-      <h2 className="text-[22px] font-semibold tracking-tight text-black">
-        {title}
-      </h2>
+      <h2 className="text-[22px] font-semibold tracking-tight text-foreground">{title}</h2>
       {action}
     </div>
   );
@@ -94,52 +130,61 @@ function SectionTitle({
 function CardBrandIcons() {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="rounded border border-[#e5e5e5] bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#1a1f71]">
+      <span className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-bold text-[#1a1f71]">
         VISA
       </span>
-      <span className="rounded border border-[#e5e5e5] bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#eb001b]">
+      <span className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-bold text-[#eb001b]">
         MC
       </span>
-      <span className="rounded border border-[#e5e5e5] bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#006fcf]">
-        AMEX
-      </span>
-      <span className="rounded border border-[#e5e5e5] bg-[#f6f6f6] px-1.5 py-0.5 text-[10px] font-medium text-[#666]">
-        +2
+      <span className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-bold text-[#006fcf]">
+        CB
       </span>
     </div>
   );
 }
 
-export function CheckoutForm({ shippingRates }: CheckoutFormProps) {
+const REASSURANCE = [
+  { icon: ShieldCheck, title: "Paiement sécurisé", text: "Chiffré et traité par Mollie" },
+  { icon: Truck, title: "Envoi discret", text: `Offert dès ${formatPrice(FREE_SHIPPING_THRESHOLD)}` },
+  { icon: RotateCcw, title: "14 jours", text: "Pour changer d'avis" },
+];
+
+export function CheckoutForm({ shippingRates, catalog: initialCatalog, demoMode = false }: CheckoutFormProps) {
   const router = useRouter();
-  const { items, getSubtotal, clearCart } = useCartStore();
+  const items = useCartStore((s) => s.items);
+  const clearCart = useCartStore((s) => s.clearCart);
+  const syncProducts = useCartStore((s) => s.syncProducts);
+  const catalog = useCatalog(initialCatalog);
   const [selectedShipping, setSelectedShipping] = useState(
-    shippingRates[0]?.id ?? ""
+    shippingRates.find((r) => r.price_cents > 0)?.id ?? shippingRates[0]?.id ?? ""
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [discountCode, setDiscountCode] = useState("");
+  const errorRef = useRef<HTMLDivElement>(null);
 
-  const subtotal = getSubtotal();
+  const subtotal = items.reduce((s, i) => s + getLinePriceCents(i.product, i.quantity), 0);
+  // Au-delà du seuil tous les modes sont offerts : le tarif « gratuit » dédié ferait doublon.
+  const paidRates = shippingRates.filter((r) => r.price_cents > 0 && subtotal >= r.min_order_cents);
+  const visibleRates = paidRates.length ? paidRates : shippingRates;
   const shippingRate =
-    shippingRates.find((r) => r.id === selectedShipping) ?? shippingRates[0];
-  const shippingCents =
-    subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : (shippingRate?.price_cents ?? 590);
-  const totals = calculateOrderTotal(subtotal, shippingCents);
+    visibleRates.find((r) => r.id === selectedShipping) ?? visibleRates[0] ?? shippingRates[0];
+  const shippingCents = getShippingCents(shippingRate, subtotal);
+  const totals = getOrderTotals(subtotal, shippingCents);
 
   const {
     register,
     handleSubmit,
     watch,
     reset,
-    setValue,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
+    mode: "onTouched",
     defaultValues: {
       billing_same_as_shipping: true,
-      marketing_opt_in: true,
+      marketing_opt_in: false,
       sms_updates: false,
       payment_method: "card",
       age_confirmed: true,
@@ -148,13 +193,18 @@ export function CheckoutForm({ shippingRates }: CheckoutFormProps) {
   });
 
   const paymentMethod = watch("payment_method");
+  const billingSame = watch("billing_same_as_shipping");
   const postalCode = watch("shipping_postal_code");
   const city = watch("shipping_city");
   const addressLine1 = watch("shipping_address_line1");
   const addressComplete =
     /^\d{5}$/.test(postalCode ?? "") &&
-    (city?.length ?? 0) >= 2 &&
-    (addressLine1?.length ?? 0) >= 5;
+    (city?.trim().length ?? 0) >= 2 &&
+    (addressLine1?.trim().length ?? 0) >= 5;
+
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [error]);
 
   function fillDevDefaults() {
     reset({
@@ -165,15 +215,13 @@ export function CheckoutForm({ shippingRates }: CheckoutFormProps) {
     });
   }
 
-  async function submitOrder(
-    data: CheckoutFormValues,
-    saveAccount: boolean
-  ) {
+  async function submitOrder(data: CheckoutFormValues, saveAccount: boolean) {
+    if (loading) return;
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await fetch(demoMode ? "/api/checkout/dev" : "/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -186,30 +234,56 @@ export function CheckoutForm({ shippingRates }: CheckoutFormProps) {
           shipping_postal_code: data.shipping_postal_code,
           shipping_phone: data.shipping_phone,
           billing_same_as_shipping: data.billing_same_as_shipping,
-          payment_method:
-            data.payment_method === "paypal" ? "bank_transfer" : "card",
+          billing_first_name: data.billing_first_name,
+          billing_last_name: data.billing_last_name,
+          billing_address_line1: data.billing_address_line1,
+          billing_city: data.billing_city,
+          billing_postal_code: data.billing_postal_code,
+          payment_method: data.payment_method,
           age_confirmed: true,
           terms_accepted: true,
+          // Le serveur recalcule tous les montants ; le total de ligne sert
+          // uniquement à détecter un prix modifié depuis l'ajout au panier.
           items: items.map((i) => ({
             product_id: i.product.id,
-            product_name: i.product.name,
-            product_sku: i.product.sku,
             quantity: i.quantity,
-            unit_price_cents: i.product.price_cents,
+            line_total_cents: getLinePriceCents(i.product, i.quantity),
           })),
-          shipping_rate_id: selectedShipping,
-          shipping_cents: shippingCents,
+          shipping_rate_id: shippingRate?.id,
         }),
       });
 
-      const result = await res.json();
+      const result = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        products?: Product[];
+        payment_url?: string;
+        order_number?: string;
+        order_token?: string;
+        order?: import("@/types").Order;
+      };
 
       if (!res.ok) {
-        throw new Error(result.error || "Erreur lors de la commande");
+        if (res.status === 409 && result.products?.length) {
+          // Prix ou stock modifiés : on met le panier à jour pour que le client vérifie.
+          syncProducts(result.products);
+          throw new Error(
+            `${result.error ?? "Votre panier a été mis à jour."} Vérifiez le récapitulatif puis validez à nouveau.`
+          );
+        }
+        throw new Error(
+          result.error ??
+            (res.status >= 500
+              ? "Le serveur ne répond pas. Aucun montant n'a été débité, merci de réessayer."
+              : "Impossible de valider la commande. Vérifiez vos informations.")
+        );
       }
 
-      clearCart();
-
+      if (demoMode && result.order) {
+        saveDevOrder(result.order);
+        clearCart();
+        router.push(`/commande/${result.order_number}?dev=1`);
+        return;
+      }
       if (saveAccount) {
         sessionStorage.setItem(
           "verde-checkout-save-account",
@@ -218,27 +292,39 @@ export function CheckoutForm({ shippingRates }: CheckoutFormProps) {
       }
 
       if (result.payment_url) {
+        clearCart();
         window.location.href = result.payment_url;
-      } else {
-        router.push(`/commande/${result.order_number}?success=true`);
+        return; // on garde l'état de chargement pendant la redirection
       }
+      clearCart();
+      router.push(`/commande/${result.order_number}?token=${encodeURIComponent(result.order_token ?? "")}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    } finally {
       setLoading(false);
+      if (err instanceof TypeError) {
+        setError("Connexion interrompue. Vérifiez votre réseau puis réessayez.");
+      } else {
+        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      }
     }
+  }
+
+  function onInvalid() {
+    setError(null);
+    const first = document.querySelector<HTMLElement>("[aria-invalid='true']");
+    first?.focus();
   }
 
   if (items.length === 0) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-5 py-16 text-center">
-        <div className="flex w-full justify-center">
-          <Logo className="h-8 sm:h-9" />
-        </div>
-        <p className="mt-8 text-lg text-[#666]">Votre panier est vide</p>
+        <Logo className="h-8 sm:h-9" />
+        <p className="mt-8 text-lg font-semibold text-foreground">Votre panier est vide</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Ajoutez des produits pour passer commande.
+        </p>
         <Link
           href="/boutique"
-          className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-black px-8 text-sm font-semibold text-white"
+          className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-sm font-semibold text-primary-foreground"
         >
           Retour à la boutique
         </Link>
@@ -246,474 +332,415 @@ export function CheckoutForm({ shippingRates }: CheckoutFormProps) {
     );
   }
 
+  const summary = (showFooter: boolean) => (
+    <CheckoutOrderSummary
+      items={items}
+      subtotalCents={totals.subtotal}
+      shippingCents={shippingCents}
+      taxCents={totals.tax}
+      totalCents={totals.total}
+      discountCode={discountCode}
+      onDiscountCodeChange={setDiscountCode}
+      showFooter={showFooter}
+      shippingPending={!addressComplete}
+    />
+  );
+
+  const inv = (name: keyof CheckoutFormValues) =>
+    errors[name] ? { "aria-invalid": true as const } : {};
+
   return (
     <>
       <div className="min-h-screen lg:grid lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_480px]">
-        {/* Colonne gauche — formulaire */}
-        <div className="bg-white lg:flex lg:justify-end">
+        <div className="bg-card lg:flex lg:justify-end">
           <div className="mx-auto w-full max-w-[520px] pb-12 lg:max-w-[580px] lg:px-10 lg:py-10 xl:px-14">
             <header className="flex flex-col items-center px-5 pt-8 text-center lg:items-start lg:px-0 lg:pt-0 lg:text-left">
-              <div className="flex w-full justify-center lg:justify-start">
+              <Link href="/" className="flex w-full justify-center lg:justify-start">
                 <Logo className="h-8 sm:h-9" priority />
-              </div>
-
-              <SatisfiedClientsBadge className="mt-5" />
-
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-medium text-[#666] lg:justify-start">
-                <span className="inline-flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  Livraison <span className="font-bold text-black">RAPIDE</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Garantie <span className="font-bold text-black">30 jours</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5" />
-                  Paiement <span className="font-bold text-black">sécurisé</span>
-                </span>
+              </Link>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-medium text-muted-foreground lg:justify-start">
+                {REASSURANCE.map(({ icon: Icon, title }) => (
+                  <span key={title} className="inline-flex items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5" />
+                    <span className="font-bold text-foreground">{title}</span>
+                  </span>
+                ))}
               </div>
             </header>
 
             {/* Résumé mobile repliable */}
-            <div className="mt-6 border-y border-[#ebebeb] bg-[#f5f5f5] lg:hidden">
+            <div className="mt-6 border-y border-border bg-cream lg:hidden">
               <button
                 type="button"
                 onClick={() => setSummaryOpen((v) => !v)}
+                aria-expanded={summaryOpen}
                 className="flex w-full items-center justify-between px-5 py-4 text-left"
               >
-                <span className="inline-flex items-center gap-2 text-[15px] font-medium text-black">
-                  Résumé de la commande
+                <span className="inline-flex items-center gap-2 text-[15px] font-medium text-foreground">
+                  {summaryOpen ? "Masquer" : "Afficher"} le récapitulatif
                   <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform",
-                      summaryOpen && "rotate-180"
-                    )}
+                    className={cn("h-4 w-4 transition-transform", summaryOpen && "rotate-180")}
                   />
                 </span>
-                <span className="text-[17px] font-bold text-black">
-                  {formatCheckoutPrice(totals.total)}
+                <span className="text-[17px] font-bold text-foreground">
+                  {formatPrice(totals.total)}
                 </span>
               </button>
-
-              {summaryOpen && (
-                <div className="border-t border-[#ebebeb] bg-white px-5 py-4">
-                  <CheckoutOrderSummary
-                    items={items}
-                    subtotalCents={totals.subtotal}
-                    shippingCents={shippingCents}
-                    totalCents={totals.total}
-                    discountCode={discountCode}
-                    onDiscountCodeChange={setDiscountCode}
-                    showFooter={false}
-                  />
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {summaryOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="border-t border-border bg-card px-5 py-4">
+                      {summary(false)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <form
-              onSubmit={handleSubmit((data) => submitOrder(data, false))}
+              noValidate
+              onSubmit={handleSubmit((data) => submitOrder(data, false), onInvalid)}
               className="px-5 pt-8 lg:px-0 lg:pt-10"
+              aria-busy={loading}
             >
-          {/* Express payment */}
-          <div className="text-center">
-            <p className="text-[13px] text-[#888]">Paiement express</p>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setValue("payment_method", "card");
-                  handleSubmit((data) => submitOrder(data, false))();
-                }}
-                disabled={loading}
-                className="flex h-[52px] items-center justify-center rounded-xl bg-[#5a31f4] text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                shop<span className="ml-0.5 font-normal">Pay</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setValue("payment_method", "paypal");
-                  handleSubmit((data) => submitOrder(data, false))();
-                }}
-                disabled={loading}
-                className="flex h-[52px] items-center justify-center rounded-xl bg-[#ffc439] transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                <span className="text-lg font-bold italic text-[#003087]">
-                  Pay<span className="text-[#009cde]">Pal</span>
-                </span>
-              </button>
-            </div>
-            <p className="mt-3 text-left text-[11px] leading-relaxed text-[#888]">
-              En cliquant sur Payer avec shop Pay ou PayPal, vous acceptez les
-              conditions générales de Verde CBD. Vous pouvez annuler votre
-              commande tant qu&apos;elle n&apos;a pas été expédiée.
-            </p>
-          </div>
-
-          <div className="relative my-8 flex items-center">
-            <div className="flex-1 border-t border-[#e5e5e5]" />
-            <span className="px-4 text-xs font-medium text-[#999]">OU</span>
-            <div className="flex-1 border-t border-[#e5e5e5]" />
-          </div>
-
-          {/* Contact */}
-          <section>
-            <SectionTitle
-              title="Contact"
-              action={
-                <Link
-                  href="/connexion"
-                  className="text-[13px] text-[#1773b0] underline underline-offset-2"
-                >
-                  Se connecter
-                </Link>
-              }
-            />
-            <CheckoutField error={errors.email?.message}>
-              <input
-                type="email"
-                placeholder="Adresse e-mail"
-                className={checkoutInputClass}
-                {...register("email")}
-              />
-            </CheckoutField>
-            <label className="mt-4 flex cursor-pointer items-start gap-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-[#d9d9d9] accent-black"
-                {...register("marketing_opt_in")}
-              />
-              <span className="text-[13px] leading-snug text-[#333]">
-                🚚 Recevez nos conseils et le suivi par email en cochant cette
-                case.
-              </span>
-            </label>
-          </section>
-
-          {/* Livraison */}
-          <section className="mt-10">
-            <SectionTitle title="Livraison" />
-            <div className="space-y-3">
-              <div className="relative">
-                <select
-                  disabled
-                  className={cn(
-                    checkoutInputClass,
-                    "appearance-none pr-10 text-black"
-                  )}
-                  defaultValue="FR"
-                >
-                  <option value="FR">France</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666]" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <CheckoutField error={errors.shipping_first_name?.message}>
-                  <input
-                    placeholder="Prénom"
-                    className={checkoutInputClass}
-                    {...register("shipping_first_name")}
-                  />
-                </CheckoutField>
-                <CheckoutField error={errors.shipping_last_name?.message}>
-                  <input
-                    placeholder="Nom"
-                    className={checkoutInputClass}
-                    {...register("shipping_last_name")}
-                  />
-                </CheckoutField>
-              </div>
-
-              <CheckoutField error={errors.shipping_address_line1?.message}>
-                <div className="relative">
-                  <input
-                    placeholder="Adresse"
-                    className={cn(checkoutInputClass, "pr-11")}
-                    {...register("shipping_address_line1")}
-                  />
-                  <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#999]" />
-                </div>
-              </CheckoutField>
-
-              <input
-                placeholder="Appartement, suite, etc. (optionnel)"
-                className={checkoutInputClass}
-                {...register("shipping_address_line2")}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <CheckoutField error={errors.shipping_postal_code?.message}>
-                  <input
-                    placeholder="Code postal"
-                    className={checkoutInputClass}
-                    {...register("shipping_postal_code")}
-                  />
-                </CheckoutField>
-                <CheckoutField error={errors.shipping_city?.message}>
-                  <input
-                    placeholder="Ville"
-                    className={checkoutInputClass}
-                    {...register("shipping_city")}
-                  />
-                </CheckoutField>
-              </div>
-
-              <CheckoutField error={errors.shipping_phone?.message}>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    placeholder="Téléphone (le livreur vous contactera par SMS)"
-                    className={cn(checkoutInputClass, "pr-11")}
-                    {...register("shipping_phone")}
-                  />
-                  <HelpCircle className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#999]" />
-                </div>
-              </CheckoutField>
-
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 rounded border-[#d9d9d9] accent-black"
-                  {...register("sms_updates")}
-                />
-                <span className="text-[13px] text-[#333]">
-                  Recevez les mises à jour à propos de votre commande par SMS
-                </span>
-              </label>
-            </div>
-          </section>
-
-          {/* Mode d'expédition */}
-          <section className="mt-10">
-            <SectionTitle title="Mode d'expédition" />
-            {!addressComplete ? (
-              <div className="rounded-[10px] bg-[#f5f5f5] px-4 py-5 text-center text-[14px] text-[#666]">
-                Saisissez votre adresse d&apos;expédition pour voir les modes
-                d&apos;expédition disponibles.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {shippingRates.map((rate) => {
-                  const price =
-                    subtotal >= FREE_SHIPPING_THRESHOLD
-                      ? 0
-                      : rate.price_cents;
-                  const selected = selectedShipping === rate.id;
-                  return (
-                    <label
-                      key={rate.id}
-                      className={cn(
-                        "flex cursor-pointer items-center justify-between rounded-[10px] border px-4 py-4 transition-colors",
-                        selected
-                          ? "border-black bg-[#fafafa]"
-                          : "border-[#d9d9d9] hover:border-[#999]"
-                      )}
+              {/* Contact */}
+              <section>
+                <SectionTitle
+                  title="Contact"
+                  action={
+                    <Link
+                      href="/connexion?redirect=/checkout"
+                      className="text-[13px] text-accent underline underline-offset-2"
                     >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="shipping"
-                          checked={selected}
-                          onChange={() => setSelectedShipping(rate.id)}
-                          className="h-4 w-4 accent-black"
-                        />
-                        <div>
-                          <p className="text-sm font-semibold text-black">
-                            {rate.name}
-                          </p>
-                          <p className="text-xs text-[#888]">
-                            {rate.estimated_days}
-                            {price === 0 ? " · Expédition gratuite" : ""}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-sm font-semibold text-black">
-                        {price === 0 ? "OFFERT" : formatCheckoutPrice(price)}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {addressComplete && shippingRate && (
-            <div className="mt-4 hidden rounded-[10px] bg-[#f5f5f5] px-4 py-4 text-[14px] text-[#666] lg:block">
-              {shippingRate.name} ·{" "}
-              {shippingCents === 0
-                ? "Expédition gratuite"
-                : formatCheckoutPrice(shippingCents)}{" "}
-              · {shippingRate.estimated_days}
-            </div>
-          )}
-
-          {/* Paiement */}
-          <section className="mt-10">
-            <SectionTitle title="Paiement" />
-            <p className="-mt-2 mb-4 text-[13px] text-[#666]">
-              Toutes les transactions sont sécurisées et chiffrées.
-            </p>
-
-            <div className="overflow-hidden rounded-[10px] border border-[#d9d9d9]">
-              {/* Carte de crédit */}
-              <label
-                className={cn(
-                  "flex cursor-pointer items-center justify-between border-b border-[#d9d9d9] px-4 py-4",
-                  paymentMethod === "card" ? "bg-white" : "bg-[#fafafa]"
-                )}
-              >
-                <div className="flex items-center gap-3">
+                      Se connecter
+                    </Link>
+                  }
+                />
+                <CheckoutField error={errors.email?.message}>
                   <input
-                    type="radio"
-                    value="card"
-                    {...register("payment_method")}
-                    className="h-4 w-4 accent-black"
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    placeholder="Adresse e-mail"
+                    className={checkoutInputClass}
+                    {...inv("email")}
+                    {...register("email")}
                   />
-                  <span className="text-sm font-medium text-black">
-                    Carte de crédit
-                  </span>
-                </div>
-                <CardBrandIcons />
-              </label>
+                </CheckoutField>
+                <p className="mt-2 text-[12px] text-muted-foreground">
+                  Pour la confirmation et le suivi de votre commande.
+                </p>
 
-              {paymentMethod === "card" && (
-                <div className="space-y-0 border-b border-[#d9d9d9] bg-[#fafafa]">
-                  <div className="relative border-b border-[#e5e5e5]">
-                    <input
-                      placeholder="Numéro de carte"
-                      className="h-[52px] w-full bg-transparent px-4 pr-11 text-[15px] placeholder:text-[#999] focus:outline-none"
-                      autoComplete="cc-number"
-                    />
-                    <Lock className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#999]" />
+              </section>
+
+              {/* Livraison */}
+              <section className="mt-10">
+                <SectionTitle title="Livraison" />
+                <div className="space-y-3">
+                  <div className="relative">
+                    <select
+                      disabled
+                      className={cn(checkoutInputClass, "appearance-none pr-10 text-foreground")}
+                      defaultValue="FR"
+                      aria-label="Pays"
+                    >
+                      <option value="FR">France métropolitaine</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   </div>
-                  <div className="grid grid-cols-2 border-b border-[#e5e5e5]">
-                    <input
-                      placeholder="Date d'expiration (MM/AA)"
-                      className="h-[52px] border-r border-[#e5e5e5] bg-transparent px-4 text-[15px] placeholder:text-[#999] focus:outline-none"
-                      autoComplete="cc-exp"
-                    />
-                    <div className="relative">
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <CheckoutField error={errors.shipping_first_name?.message}>
                       <input
-                        placeholder="Code de sécurité"
-                        className="h-[52px] w-full bg-transparent px-4 pr-11 text-[15px] placeholder:text-[#999] focus:outline-none"
-                        autoComplete="cc-csc"
+                        placeholder="Prénom"
+                        autoComplete="given-name"
+                        className={checkoutInputClass}
+                        {...inv("shipping_first_name")}
+                        {...register("shipping_first_name")}
                       />
-                      <HelpCircle className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#999]" />
-                    </div>
+                    </CheckoutField>
+                    <CheckoutField error={errors.shipping_last_name?.message}>
+                      <input
+                        placeholder="Nom"
+                        autoComplete="family-name"
+                        className={checkoutInputClass}
+                        {...inv("shipping_last_name")}
+                        {...register("shipping_last_name")}
+                      />
+                    </CheckoutField>
                   </div>
-                  <input
-                    placeholder="Nom sur la carte"
-                    className="h-[52px] w-full bg-transparent px-4 text-[15px] placeholder:text-[#999] focus:outline-none"
-                    autoComplete="cc-name"
-                  />
-                </div>
-              )}
 
-              {/* PayPal */}
-              <label
-                className={cn(
-                  "flex cursor-pointer items-center justify-between px-4 py-4",
-                  paymentMethod === "paypal" ? "bg-white" : "bg-[#fafafa]"
+                  <CheckoutField error={errors.shipping_address_line1?.message}>
+                    <input
+                      placeholder="Adresse"
+                      autoComplete="address-line1"
+                      className={checkoutInputClass}
+                      {...inv("shipping_address_line1")}
+                      {...register("shipping_address_line1")}
+                    />
+                  </CheckoutField>
+
+                  <input
+                    placeholder="Appartement, bâtiment, etc. (optionnel)"
+                    autoComplete="address-line2"
+                    className={checkoutInputClass}
+                    {...register("shipping_address_line2")}
+                  />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <CheckoutField error={errors.shipping_postal_code?.message}>
+                      <input
+                        placeholder="Code postal"
+                        autoComplete="postal-code"
+                        inputMode="numeric"
+                        maxLength={5}
+                        className={checkoutInputClass}
+                        {...inv("shipping_postal_code")}
+                        {...register("shipping_postal_code")}
+                      />
+                    </CheckoutField>
+                    <CheckoutField error={errors.shipping_city?.message}>
+                      <input
+                        placeholder="Ville"
+                        autoComplete="address-level2"
+                        className={checkoutInputClass}
+                        {...inv("shipping_city")}
+                        {...register("shipping_city")}
+                      />
+                    </CheckoutField>
+                  </div>
+
+                  <CheckoutField error={errors.shipping_phone?.message}>
+                    <input
+                      type="tel"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      placeholder="Téléphone (pour le suivi de livraison)"
+                      className={checkoutInputClass}
+                      {...inv("shipping_phone")}
+                      {...register("shipping_phone")}
+                    />
+                  </CheckoutField>
+                </div>
+              </section>
+
+              {/* Mode d'expédition */}
+              <section className="mt-10">
+                <SectionTitle title="Mode d'expédition" />
+                {!addressComplete ? (
+                  <div className="rounded-[10px] bg-cream px-4 py-5 text-center text-[14px] text-muted-foreground">
+                    Saisissez votre adresse pour voir les modes d&apos;expédition disponibles.
+                  </div>
+                ) : (
+                  <div className="space-y-2" role="radiogroup" aria-label="Mode d'expédition">
+                    {visibleRates.map((rate) => {
+                      const price = getShippingCents(rate, subtotal);
+                      const selected = shippingRate?.id === rate.id;
+                      return (
+                        <label
+                          key={rate.id}
+                          className={cn(
+                            "flex cursor-pointer items-center justify-between rounded-[10px] border px-4 py-4 transition-colors",
+                            selected
+                              ? "border-foreground bg-cream"
+                              : "border-border hover:border-stone"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="shipping"
+                              checked={selected}
+                              onChange={() => setSelectedShipping(rate.id)}
+                              className="h-4 w-4 accent-primary"
+                            />
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{rate.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {rate.description || rate.estimated_days}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={cn(
+                              "text-sm font-semibold",
+                              price === 0 ? "text-primary" : "text-foreground"
+                            )}
+                          >
+                            {price === 0 ? "OFFERT" : formatPrice(price)}
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {subtotal < FREE_SHIPPING_THRESHOLD && (
+                      <p className="pt-1 text-[12px] text-muted-foreground">
+                        Livraison offerte dès {formatPrice(FREE_SHIPPING_THRESHOLD)} — plus que{" "}
+                        <strong className="text-foreground">
+                          {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)}
+                        </strong>
+                        .
+                      </p>
+                    )}
+                  </div>
                 )}
-              >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    value="paypal"
-                    {...register("payment_method")}
-                    className="h-4 w-4 accent-black"
-                  />
-                  <span className="text-sm font-medium text-black">PayPal</span>
+              </section>
+
+              {/* Order bump */}
+              <OrderBump catalog={catalog} className="mt-8" />
+
+              {/* Paiement */}
+              <section className="mt-10">
+                <SectionTitle title="Paiement" />
+                <p className="-mt-2 mb-4 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5" />
+                  Transactions sécurisées et chiffrées par Mollie.
+                </p>
+
+                <div className="overflow-hidden rounded-[10px] border border-border">
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-center justify-between border-b border-border px-4 py-4",
+                      paymentMethod === "card" ? "bg-card" : "bg-cream"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        value="card"
+                        {...register("payment_method")}
+                        className="h-4 w-4 accent-primary"
+                      />
+                      <span className="text-sm font-medium text-foreground">Carte bancaire</span>
+                    </div>
+                    <CardBrandIcons />
+                  </label>
+                  {paymentMethod === "card" && (
+                    <div className="border-b border-border bg-cream px-4 py-4 text-[13px] leading-relaxed text-muted-foreground">
+                      Après validation, vous serez redirigé vers la page de paiement
+                      sécurisée Mollie (3-D Secure). Vos données bancaires ne
+                      transitent jamais par notre site.
+                    </div>
+                  )}
+
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-center justify-between px-4 py-4",
+                      paymentMethod === "bank_transfer" ? "bg-card" : "bg-cream"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        value="bank_transfer"
+                        {...register("payment_method")}
+                        className="h-4 w-4 accent-primary"
+                      />
+                      <span className="text-sm font-medium text-foreground">Virement bancaire</span>
+                    </div>
+                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                  </label>
+                  {paymentMethod === "bank_transfer" && (
+                    <div className="border-t border-border bg-cream px-4 py-4 text-[13px] leading-relaxed text-muted-foreground">
+                      Les coordonnées bancaires apparaissent après confirmation. La
+                      commande est expédiée à réception du virement.
+                    </div>
+                  )}
                 </div>
-                <span className="text-base font-bold italic text-[#003087]">
-                  Pay<span className="text-[#009cde]">Pal</span>
-                </span>
-              </label>
-            </div>
 
-            <label className="mt-4 flex cursor-pointer items-start gap-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-[#d9d9d9] accent-black"
-                {...register("billing_same_as_shipping")}
-              />
-              <span className="text-[13px] text-[#333]">
-                Utiliser l&apos;adresse d&apos;expédition comme adresse de
-                facturation
-              </span>
-            </label>
-          </section>
+                <label className="mt-4 flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded border-border accent-primary"
+                    {...register("billing_same_as_shipping")}
+                  />
+                  <span className="text-[13px] text-muted-foreground">
+                    Adresse de facturation identique à l&apos;adresse de livraison
+                  </span>
+                </label>
+                {!billingSame && <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {([
+                    ["billing_first_name", "Prénom de facturation"],
+                    ["billing_last_name", "Nom de facturation"],
+                    ["billing_address_line1", "Adresse de facturation"],
+                    ["billing_city", "Ville de facturation"],
+                    ["billing_postal_code", "Code postal de facturation"],
+                  ] as const).map(([field, label]) => <CheckoutField key={field} error={errors[field]?.message}><input aria-label={label} placeholder={label} className={checkoutInputClass} {...register(field)} /></CheckoutField>)}
+                </div>}
+              </section>
 
-          {error && (
-            <p className="mt-4 rounded-[10px] bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </p>
-          )}
+              <div ref={errorRef}>
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      role="alert"
+                      className="mt-6 flex gap-2.5 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                    >
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>{error}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-          <div className="mt-8 space-y-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex h-[54px] w-full items-center justify-center rounded-xl bg-black text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? "Traitement..." : "Payer en tant qu'invité"}
-            </button>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleSubmit((data) => submitOrder(data, true))}
-              className="flex h-[54px] w-full items-center justify-center rounded-xl border-2 border-black bg-white text-[15px] font-bold text-black transition-colors hover:bg-[#fafafa] disabled:opacity-50"
-            >
-              Payer et enregistrer mes informations
-            </button>
-          </div>
+              <div className="mt-8 space-y-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex h-[56px] w-full items-center justify-center gap-2 rounded-xl bg-primary text-[15px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-70"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {paymentMethod === "card" ? "Redirection vers le paiement…" : "Validation…"}
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      {demoMode ? "Tester la commande" : paymentMethod === "card" ? "Payer" : "Commander"} {formatPrice(totals.total)}
+                    </>
+                  )}
+                </button>
+              </div>
 
-          <p className="mt-5 text-left text-[11px] leading-relaxed text-[#666]">
-            En cliquant sur « Payer et enregistrer mes informations », vous
-            créez un compte Verde CBD et acceptez nos{" "}
-            <Link href="/cgv" className="underline">
-              Conditions d&apos;utilisation
-            </Link>{" "}
-            et notre{" "}
-            <Link href="/politique-confidentialite" className="underline">
-              Politique de confidentialité
-            </Link>
-            .
-          </p>
+              <div className="mt-6 grid grid-cols-3 gap-2 text-center">
+                {REASSURANCE.map(({ icon: Icon, title, text }) => (
+                  <div key={title} className="rounded-[10px] bg-cream px-2 py-3">
+                    <Icon className="mx-auto h-4 w-4 text-foreground" />
+                    <p className="mt-1.5 text-[12px] font-bold text-foreground">{title}</p>
+                    <p className="text-[11px] leading-snug text-muted-foreground">{text}</p>
+                  </div>
+                ))}
+              </div>
 
-          <p className="mt-4 text-left text-[11px] leading-relaxed text-[#888]">
-            En passant commande, vous confirmez avoir 18 ans ou plus et acceptez
-            nos conditions générales de vente.
-          </p>
+              <p className="mt-5 text-left text-[11px] leading-relaxed text-muted-foreground">
+                En passant commande, vous confirmez avoir 18 ans ou plus et acceptez nos{" "}
+                <Link href="/cgv" className="underline">
+                  conditions générales de vente
+                </Link>{" "}
+                et notre{" "}
+                <Link href="/politique-confidentialite" className="underline">
+                  politique de confidentialité
+                </Link>
+                .
+              </p>
 
-          {/* Mobile only — récap complet sous le formulaire */}
-          <div className="mt-10 lg:hidden">
-            <CheckoutOrderSummary
-              items={items}
-              subtotalCents={totals.subtotal}
-              shippingCents={shippingCents}
-              totalCents={totals.total}
-              discountCode={discountCode}
-              onDiscountCodeChange={setDiscountCode}
-            />
-          </div>
+              <div className="mt-10 lg:hidden">{summary(true)}</div>
             </form>
           </div>
         </div>
 
-        {/* Colonne droite — récap commande (PC) */}
-        <aside className="hidden border-l border-[#e1e1e1] bg-[#f5f5f5] lg:block">
+        <aside className="hidden border-l border-border bg-cream lg:block">
           <div className="sticky top-0 max-h-screen overflow-y-auto px-8 py-10 xl:px-12">
-            <CheckoutOrderSummary
-              items={items}
-              subtotalCents={totals.subtotal}
-              shippingCents={shippingCents}
-              totalCents={totals.total}
-              discountCode={discountCode}
-              onDiscountCodeChange={setDiscountCode}
-            />
+            {summary(true)}
           </div>
         </aside>
       </div>

@@ -1,108 +1,96 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Minus, Plus, Trash2, Lock } from "lucide-react";
+import { X, Lock, ShoppingBag, RotateCcw, Truck, ShieldCheck } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { formatPrice } from "@/lib/utils";
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/data/catalog";
-import { cn } from "@/lib/utils";
+import { FreeShippingBar } from "@/components/shop/free-shipping-bar";
+import { CartLine } from "@/components/shop/upsell/cart-line";
+import { CompleteYourOrder } from "@/components/shop/upsell/complete-your-order";
+import { useCatalog } from "@/components/shop/upsell/use-catalog";
+import { pickComplementaryProducts } from "@/components/shop/upsell/recommendations";
 
-const SAMPLE_GIFT_THRESHOLD = 10000;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-function formatPriceGreen(cents: number) {
-  return formatPrice(cents).replace(/\s/g, "");
-}
-
-function getProductSubtitle(product: {
-  weight_grams: number | null;
-  short_description: string;
-}) {
-  if (product.weight_grams) return `${product.weight_grams}g`;
-  return product.short_description.split(",")[0]?.trim() ?? "";
-}
-
-function CartProgressBar({ subtotalCents }: { subtotalCents: number }) {
-  const nextThreshold = SAMPLE_GIFT_THRESHOLD;
-  const remaining = Math.max(0, nextThreshold - subtotalCents);
-  const progress = Math.min(100, (subtotalCents / nextThreshold) * 100);
-  const shippingReached = subtotalCents >= FREE_SHIPPING_THRESHOLD;
-  const sampleReached = subtotalCents >= SAMPLE_GIFT_THRESHOLD;
-
+function EmptyCart({ onClose }: { onClose: () => void }) {
+  const catalog = useCatalog();
+  const bestsellers = pickComplementaryProducts(
+    catalog.filter((p) => p.is_featured).length >= 2
+      ? catalog.filter((p) => p.is_featured)
+      : catalog,
+    { limit: 3, perCategory: 1 }
+  );
   return (
-    <div className="border-t border-[#eee] bg-white px-5 py-5">
-      {!sampleReached && (
-        <p className="text-center text-[13px] text-black/70">
-          Plus que{" "}
-          <span className="font-semibold text-black">
-            {formatPrice(remaining).replace(/\s/g, "")}
-          </span>{" "}
-          pour débloquer l&apos;échantillon{" "}
-          <span className="font-bold">OFFERT</span>
-        </p>
-      )}
-      {sampleReached && (
-        <p className="text-center text-[13px] font-semibold text-black">
-          Échantillon offert débloqué !
-        </p>
-      )}
-
-      <div className="relative mt-4">
-        <div className="h-[3px] rounded-full bg-[#e8e8e8]">
-          <motion.div
-            className="h-full rounded-full bg-black"
-            initial={false}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: EASE, delay: 0.1 }}
+      className="flex flex-1 flex-col overflow-y-auto px-6 py-10"
+    >
+      <div className="flex flex-col items-center text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cream">
+          <ShoppingBag className="h-7 w-7 stroke-[1.5] text-foreground/60" />
         </div>
-        <div
-          className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-black bg-white"
-          style={{ left: `calc(${progress}% - 6px)` }}
-        />
+        <p className="mt-5 text-lg font-bold text-foreground">Votre panier est vide</p>
+        <p className="mt-1.5 max-w-[260px] text-sm text-foreground/55">
+          Pre-rolls, résines et vapes CBD testés en laboratoire, livrés en toute discrétion.
+        </p>
+        <Link
+          href="/boutique"
+          onClick={onClose}
+          className="mt-6 rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-85"
+        >
+          Découvrir la boutique
+        </Link>
       </div>
-
-      <div className="mt-3 flex justify-between text-[11px] font-medium text-black/55">
-        <span className={cn(shippingReached && "font-bold text-black")}>
-          Livraison OFFERTE
-        </span>
-        <span className={cn(sampleReached && "font-bold text-black")}>
-          Échantillon gratuit
-        </span>
-      </div>
-    </div>
+      {bestsellers.length > 0 && (
+        <div className="mt-10 space-y-2">
+          <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-foreground/50">
+            Pour commencer
+          </p>
+          {bestsellers.map((p) => (
+            <Link
+              key={p.id}
+              href={`/produit/${p.slug}`}
+              onClick={onClose}
+              className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm transition-colors hover:border-foreground/30"
+            >
+              <span className="font-semibold text-foreground">{p.name}</span>
+              <span className="text-foreground/60">{formatPrice(p.price_cents)}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </motion.div>
   );
 }
 
 export function CartDrawer() {
-  const {
-    items,
-    isOpen,
-    closeCart,
-    updateQuantity,
-    removeItem,
-    getSubtotal,
-    getItemCount,
-  } = useCartStore();
-
-  const subtotal = getSubtotal();
-  const itemCount = getItemCount();
-  const compareSubtotal = items.reduce(
-    (sum, { product, quantity }) =>
-      sum +
-      (product.compare_at_price_cents ?? product.price_cents) * quantity,
-    0
-  );
-  const hasDiscount = compareSubtotal > subtotal;
+  const items = useCartStore((s) => s.items);
+  const isOpen = useCartStore((s) => s.isOpen);
+  const closeCart = useCartStore((s) => s.closeCart);
+  const lastAddedId = useCartStore((s) => s.lastAddedId);
+  const subtotal = useCartStore((s) => s.getSubtotal());
+  const compareSubtotal = useCartStore((s) => s.getCompareSubtotal());
+  const itemCount = useCartStore((s) => s.getItemCount());
+  const catalog = useCatalog();
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeCart();
+    window.addEventListener("keydown", onKey);
+    panelRef.current?.focus();
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
     };
-  }, [isOpen]);
+  }, [isOpen, closeCart]);
+
+  const savings = compareSubtotal - subtotal;
 
   return (
     <AnimatePresence>
@@ -113,191 +101,116 @@ export function CartDrawer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40"
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
             onClick={closeCart}
             aria-label="Fermer le panier"
           />
 
           <motion.aside
+            ref={panelRef}
+            tabIndex={-1}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col bg-white shadow-2xl"
+            transition={{ type: "spring", stiffness: 380, damping: 38, mass: 0.9 }}
+            className="absolute right-0 top-0 flex h-full w-full max-w-[440px] flex-col bg-background shadow-2xl outline-none"
           >
-            {/* Header */}
-            <div className="flex shrink-0 items-center justify-between px-5 py-4">
-              <h2 className="text-sm font-bold tracking-[0.12em] text-black">
-                PANIER
+            <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-sm font-bold tracking-[0.12em] text-foreground">
+                PANIER{" "}
+                {itemCount > 0 && (
+                  <motion.span
+                    key={itemCount}
+                    initial={{ scale: 1.4 }}
+                    animate={{ scale: 1 }}
+                    className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground"
+                  >
+                    {itemCount}
+                  </motion.span>
+                )}
               </h2>
               <button
                 type="button"
                 onClick={closeCart}
-                className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
+                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-black/5"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5 stroke-[1.5]" />
               </button>
             </div>
 
-            {/* Bannière membres */}
-            <div className="shrink-0 bg-[#f3f3f3] px-4 py-3 text-center text-[13px] text-black/80">
-              Rejoignez + de 2 000 clients Verde CBD
-            </div>
-
             {items.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                <p className="text-base font-bold text-black">
-                  Votre panier est vide
-                </p>
-                <p className="mt-2 text-sm text-black/55">
-                  Découvrez nos produits CBD premium
-                </p>
-                <Link
-                  href="/boutique"
-                  onClick={closeCart}
-                  className="mt-6 rounded-full bg-black px-8 py-3 text-sm font-semibold text-white"
-                >
-                  Découvrir la boutique
-                </Link>
-              </div>
+              <EmptyCart onClose={closeCart} />
             ) : (
               <>
-                <div className="flex-1 overflow-y-auto px-5 py-4">
-                  <div className="space-y-4">
-                    {items.map(({ product, quantity }) => {
-                      const lineTotal = product.price_cents * quantity;
-                      const lineCompare =
-                        (product.compare_at_price_cents ?? product.price_cents) *
-                        quantity;
+                <FreeShippingBar
+                  subtotalCents={subtotal}
+                  className="shrink-0 border-b border-border px-5 py-4"
+                />
 
-                      return (
-                        <div
+                <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+                  <div className="space-y-3">
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {items.map(({ product, quantity }) => (
+                        <CartLine
                           key={product.id}
-                          className="rounded-xl border border-[#e8e8e8] p-4"
-                        >
-                          <div className="flex gap-3">
-                            <Link
-                              href={`/produit/${product.slug}`}
-                              onClick={closeCart}
-                              className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-lg bg-[#f5f5f5]"
-                            >
-                              <Image
-                                src={product.image_url}
-                                alt={product.name}
-                                fill
-                                className="object-contain p-1.5"
-                                sizes="88px"
-                              />
-                            </Link>
-
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <Link
-                                    href={`/produit/${product.slug}`}
-                                    onClick={closeCart}
-                                    className="text-[15px] font-bold leading-snug text-black hover:underline"
-                                  >
-                                    {product.name}
-                                  </Link>
-                                  <p className="mt-0.5 text-[13px] text-black/55">
-                                    {getProductSubtitle(product)}
-                                  </p>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => removeItem(product.id)}
-                                  className="shrink-0 text-black/40 hover:text-black"
-                                  aria-label="Supprimer"
-                                >
-                                  <Trash2 className="h-4 w-4 stroke-[1.5]" />
-                                </button>
-                              </div>
-
-                              <div className="mt-4 flex items-end justify-between">
-                                <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-[#ddd]">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      updateQuantity(product.id, quantity - 1)
-                                    }
-                                    className="flex h-9 w-9 items-center justify-center text-black hover:bg-[#f5f5f5]"
-                                    aria-label="Diminuer la quantité"
-                                  >
-                                    <Minus className="h-3.5 w-3.5" />
-                                  </button>
-                                  <span className="flex h-9 min-w-[2.25rem] items-center justify-center border-x border-[#ddd] text-sm font-medium">
-                                    {quantity}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      updateQuantity(product.id, quantity + 1)
-                                    }
-                                    disabled={quantity >= product.stock}
-                                    className="flex h-9 w-9 items-center justify-center text-black hover:bg-[#f5f5f5] disabled:opacity-40"
-                                    aria-label="Augmenter la quantité"
-                                  >
-                                    <Plus className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-
-                                <div className="text-right">
-                                  <span className="text-[15px] font-bold text-[#2d9a5f]">
-                                    {formatPriceGreen(lineTotal)}
-                                  </span>
-                                  {lineCompare > lineTotal && (
-                                    <span className="ml-1.5 text-[13px] text-black/35 line-through">
-                                      {formatPriceGreen(lineCompare)}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          product={product}
+                          quantity={quantity}
+                          highlight={product.id === lastAddedId}
+                          onNavigate={closeCart}
+                        />
+                      ))}
+                    </AnimatePresence>
                   </div>
+
+                  <CompleteYourOrder
+                    catalog={catalog}
+                    onNavigate={closeCart}
+                    className="mt-7"
+                  />
                 </div>
 
-                <CartProgressBar subtotalCents={subtotal} />
-
-                <div className="shrink-0 border-t border-[#eee] bg-white px-5 py-5">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-bold text-black">
-                      Sous-total ({itemCount} article
-                      {itemCount !== 1 ? "s" : ""})
-                    </span>
-                    <div>
-                      <span className="text-base font-bold text-[#2d9a5f]">
-                        {formatPriceGreen(subtotal)}
-                      </span>
-                      {hasDiscount && (
-                        <span className="ml-2 text-sm text-black/35 line-through">
-                          {formatPriceGreen(compareSubtotal)}
-                        </span>
-                      )}
+                <div className="shrink-0 border-t border-border bg-card px-5 pb-5 pt-4">
+                  {savings > 0 && (
+                    <div className="flex justify-between text-[13px] text-primary">
+                      <span>Vous économisez</span>
+                      <span className="font-semibold">−{formatPrice(savings)}</span>
                     </div>
+                  )}
+                  <div className="mt-1 flex items-baseline justify-between">
+                    <span className="text-sm font-bold text-foreground">
+                      Sous-total ({itemCount} article{itemCount !== 1 ? "s" : ""})
+                    </span>
+                    <span className="text-lg font-bold text-foreground">{formatPrice(subtotal)}</span>
                   </div>
+                  <p className="mt-0.5 text-[12px] text-foreground/50">
+                    TVA incluse. Livraison calculée à l&apos;étape suivante.
+                  </p>
 
                   <Link
                     href="/checkout"
                     onClick={closeCart}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-black py-4 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
                   >
                     <Lock className="h-4 w-4" />
-                    Passer ma commande
+                    Commander · {formatPrice(subtotal)}
+                  </Link>
+                  <div className="mt-3 flex items-center justify-center gap-4 text-[11px] text-foreground/55">
+                    <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" />Paiement sécurisé</span>
+                    <span className="inline-flex items-center gap-1"><Truck className="h-3.5 w-3.5" />Envoi discret</span>
+                    <span className="inline-flex items-center gap-1"><RotateCcw className="h-3.5 w-3.5" />Retours 14 jours</span>
+                  </div>
+                  <Link
+                    href="/panier"
+                    onClick={closeCart}
+                    className="mt-2 block text-center text-[12px] text-foreground/50 underline underline-offset-2 hover:text-foreground"
+                  >
+                    Voir le panier complet
                   </Link>
                 </div>
               </>
             )}
-
-            <div className="shrink-0 bg-[#f3f3f3] px-4 py-3 text-center text-[11px] leading-relaxed text-black/60">
-              Essayez sans risque : 30 jours satisfait ou remboursé | Paiements
-              sécurisés
-            </div>
           </motion.aside>
         </div>
       )}

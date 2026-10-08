@@ -1,11 +1,12 @@
 import type { Product, ProductCategory } from "@/types";
 
-export function getProductBenefits(category: ProductCategory) {
+export function getProductBenefits(category: ProductCategory, isFlower = false) {
+  if (isFlower) return [{ emoji: "🌿", label: "Fleurs de chanvre" }, { emoji: "📦", label: "Sachet refermable" }, { emoji: "⚖️", label: "Formats 3, 5 et 10 g" }, { emoji: "🔎", label: "Informations du lot" }];
   const common = [
-    { emoji: "🧘", label: "Relaxation naturelle" },
-    { emoji: "😌", label: "Réduit le stress" },
-    { emoji: "✅", label: "100% légal en France" },
-    { emoji: "😴", label: "Favorise le sommeil" },
+    { emoji: "🌿", label: "Chanvre naturel" },
+    { emoji: "🔬", label: "Informations de composition" },
+    { emoji: "✅", label: "Sélection CBD" },
+    { emoji: "📦", label: "Colis discret" },
   ];
 
   const byCategory: Partial<Record<ProductCategory, typeof common>> = {
@@ -13,25 +14,25 @@ export function getProductBenefits(category: ProductCategory) {
       { emoji: "🚬", label: "Prêt à l'emploi" },
       { emoji: "📦", label: "Conservation en tube" },
       { emoji: "✅", label: "THC < 0,3%" },
-      { emoji: "🔬", label: "Analysé en laboratoire" },
+      { emoji: "🔬", label: "Informations de composition" },
     ],
     resines: [
       { emoji: "✨", label: "Concentration élevée" },
-      { emoji: "😌", label: "Relaxation profonde" },
+      { emoji: "🌿", label: "100 % naturel" },
       { emoji: "✅", label: "THC < 0,3%" },
-      { emoji: "🔬", label: "COA disponible" },
+      { emoji: "🔬", label: "Traçabilité du lot" },
     ],
     vapes: [
-      { emoji: "☁️", label: "Effet rapide" },
+      { emoji: "🚭", label: "Sans nicotine" },
       { emoji: "🔋", label: "Pods rechargeables" },
       { emoji: "✅", label: "Sans goudron" },
-      { emoji: "🇫🇷", label: "Formules françaises" },
+      { emoji: "🔬", label: "Concentration indiquée" },
     ],
     accessoires: [
       { emoji: "🔥", label: "Qualité premium" },
       { emoji: "♻️", label: "Réutilisable" },
       { emoji: "📦", label: "Format pratique" },
-      { emoji: "✅", label: "Marques reconnues" },
+      { emoji: "✅", label: "Sélection soignée" },
     ],
   };
 
@@ -44,11 +45,11 @@ export const STORY_RINGS = [
   { id: "faq", label: "Questions fréquentes", image: "faq" },
 ] as const;
 
-export function getProductFaqs(category: ProductCategory) {
+export function getProductFaqs(category: ProductCategory, isFlower = false) {
   const base = [
     {
-      q: "Combien de temps dure une cure idéale ?",
-      a: "Nous recommandons une utilisation régulière sur 4 à 8 semaines pour observer les effets optimaux, puis une pause si nécessaire.",
+      q: "Comment conserver mon produit ?",
+      a: "À l'abri de la lumière, de la chaleur et de l'humidité, dans son contenant d'origine bien fermé. Tenir hors de portée des enfants.",
     },
     {
       q: "Existe-t-il des effets indésirables ?",
@@ -59,11 +60,12 @@ export function getProductFaqs(category: ProductCategory) {
       a: "Réservé aux personnes majeures (+18 ans). Déconseillé aux femmes enceintes ou allaitantes sans avis médical.",
     },
     {
-      q: "Quand vais-je constater les effets ?",
-      a: "Les effets varient selon les personnes. La plupart de nos clients ressentent une différence dès la première semaine d'utilisation régulière.",
+      q: "Où trouver le certificat d'analyse ?",
+      a: "Le certificat d'analyse (COA) du lot en vente est disponible sur demande par e-mail, et en téléchargement sur la fiche produit lorsqu'il est indiqué.",
     },
   ];
 
+  if (isFlower) return [{ q: "Comment choisir le format de mes fleurs ?", a: "Les formats 3, 5 et 10 g correspondent au poids net du sachet. Sélectionnez le format sur cette fiche, puis le nombre de sachets souhaité. Conservez les fleurs au sec et à l'abri de la lumière." }, ...base];
   if (category === "fleurs") {
     return [
       {
@@ -87,8 +89,8 @@ export function getProductFaqs(category: ProductCategory) {
   if (category === "vapes") {
     return [
       {
-        q: "Quelle différence entre recharges classiques et gamme Omega ?",
-        a: "Les recharges classiques contiennent du CBD full spectrum (500mg) pour un effet relaxant progressif. La gamme Omega est enrichie en H4CBD (800mg) pour un effet plus puissant et rapide, réservée aux utilisateurs expérimentés.",
+        q: "Comment choisir une recharge CBD ?",
+        a: "Vérifiez la compatibilité avec votre appareil, le volume et la concentration indiqués sur la fiche produit. Respectez les instructions du fabricant.",
       },
       {
         q: "Comment utiliser le booster CBD ?",
@@ -101,7 +103,8 @@ export function getProductFaqs(category: ProductCategory) {
   return base;
 }
 
-export function getUsageSteps(category: ProductCategory) {
+export function getUsageSteps(category: ProductCategory, isFlower = false) {
+  if (isFlower) return ["Vérifiez le format, les informations de lot et les indications du fournisseur.", "Respectez l'usage indiqué sur l'emballage et les précautions associées.", "Refermez le sachet et conservez-le au sec, à l'abri de la chaleur et de la lumière."];
   if (category === "fleurs") {
     return [
       "Ouvrez le tube hermétique et sortez le pre-roll.",
@@ -120,7 +123,7 @@ export function getUsageSteps(category: ProductCategory) {
     return [
       "Insérez la cartouche dans le pod ou remplissez votre clearomiseur.",
       "Inhalez lentement par bouffées de 3 à 5 secondes.",
-      "Attendez 15 minutes entre les sessions pour évaluer l'effet.",
+      "Rangez le pod à l'abri de la chaleur entre deux utilisations.",
     ];
   }
   if (category === "accessoires") {
@@ -132,21 +135,21 @@ export function getUsageSteps(category: ProductCategory) {
   }
   return [
     "Utilisez selon les instructions du produit.",
-    "Respectez la posologie recommandée.",
+    "Respectez les indications de l'emballage.",
     "Conservez au sec, à l'abri de la lumière.",
   ];
 }
 
 export function getScientificQuote(category: ProductCategory) {
   if (category === "vapes") {
-    return "La vaporisation du CBD offre une biodisponibilité élevée et un effet quasi-immédiat, sans combustion ni goudron, pour une expérience propre et contrôlée.";
+    return "La vaporisation du CBD se fait sans combustion : pas de fumée ni de goudron.";
   }
-  return "Le CBD, extrait du chanvre, est reconnu pour ses propriétés relaxantes et son profil sécuritaire, avec un taux de THC inférieur à 0,3%.";
+  return "Le CBD, extrait du chanvre, est légal en France dès lors que le taux de THC est inférieur à 0,3 % — ce que nous vérifions en laboratoire pour chaque lot.";
 }
 
 export function getPackOptions(priceCents: number, compareCents: number | null) {
   const unit = priceCents;
-  const compare = compareCents ?? Math.round(unit * 1.15);
+  const compare = compareCents ?? unit;
   return [
     {
       id: "1",
@@ -193,18 +196,18 @@ export function getAccordionSections(product: Product) {
       id: "pour-qui",
       title: "Pour qui ?",
       content:
-        "Adultes (+18 ans) souhaitant intégrer le CBD dans leur routine bien-être. Idéal pour gérer le stress quotidien, favoriser la relaxation et améliorer la qualité du sommeil. Consultez un professionnel de santé en cas de traitement en cours.",
+        "Réservé aux adultes (+18 ans). Déconseillé aux femmes enceintes ou allaitantes. Consultez un professionnel de santé en cas de traitement en cours. Ce produit n'est pas un médicament.",
     },
     {
       id: "utilisation",
       title: "Comment l'utiliser ?",
-      content: getUsageSteps(product.category).join("\n\n"),
+      content: getUsageSteps(product.category, product.tags.includes("fleur")).join("\n\n"),
     },
     {
       id: "livraison",
       title: "Livraison et Garantie",
       content:
-        "Expédition sous 24h ouvrées. Livraison offerte dès 80€ d'achat en France métropolitaine. Garantie satisfait ou remboursé 30 jours — si vous n'êtes pas satisfait, nous vous remboursons sans justification.",
+        "Expédition sous 24h ouvrées. Livraison offerte dès 80€ d'achat en France métropolitaine. Retours acceptés sous 14 jours pour les produits non ouverts.",
     },
   ];
 }
@@ -213,26 +216,14 @@ export function getBrutalistAccordions(product: Product) {
   return [
     {
       id: "why",
-      title: "Pourquoi choisir Verde CBD ?",
+      title: "Pourquoi choisir CBD ?",
       content:
         "Sélection rigoureuse, traçabilité complète, certificats COA pour chaque lot, THC < 0,3% conforme à la législation française. Une qualité premium accessible.",
     },
     {
       id: "compare",
       title: "Tableau comparatif",
-      content: `Verde CBD vs marché : analyses laboratoire systématiques ✓ | THC < 0,3% certifié ✓ | Origine UE traçable ✓ | Service client réactif ✓ | Prix justes ✓`,
-    },
-    {
-      id: "studies",
-      title: "Les études sur le CBD",
-      content:
-        "De nombreuses recherches scientifiques documentent les propriétés du cannabidiol sur le stress, l'anxiété et le sommeil. Le WHO considère le CBD comme généralement bien toléré.",
-    },
-    {
-      id: "references",
-      title: "Références scientifiques",
-      content:
-        "Blessing et al. (2015) — Cannabidiol as a Potential Treatment for Anxiety Disorders. Shannon et al. (2019) — Cannabidiol in Anxiety and Sleep: A Large Case Series.",
+      content: `CBD vs marché : analyses laboratoire systématiques ✓ | THC < 0,3% certifié ✓ | Origine UE traçable ✓ | Service client réactif ✓ | Prix justes ✓`,
     },
   ];
 }
@@ -240,7 +231,7 @@ export function getBrutalistAccordions(product: Product) {
 export function getDifferenceItems() {
   return [
     { num: "01", title: "Un chanvre premium sélectionné" },
-    { num: "02", title: "Des analyses COA pour chaque lot" },
+    { num: "02", title: "Les documents du lot sur sa fiche" },
     { num: "03", title: "Une traçabilité 100% transparente" },
   ];
 }
